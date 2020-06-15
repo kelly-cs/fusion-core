@@ -26,11 +26,11 @@ We will be loosely emulating the game environment using data collected on all im
 
 There are a couple ways this can be approached.
 
-_1) Brute Force_
+#1) Brute Force
 At every game tick, we can attempt all possible game actions by asking the GameState object.
 While this won't explore EVERY possible permutation because of in-game limits, it will likely be taxing on performance.
 The goal will be to approach the target unit composition as fast as possible.
 
-_2) Income Focus_
+#2) Income Focus
 At every game tick, we can attempt all possible actions that accomplish the target unit composition, while not
 letting the production of workers stop until a certain amount. This will decrease the range of possibilities to test.
