@@ -32,7 +32,7 @@ class GameState:
         self.bases = [base.Base(self.startingWorkers, self.raceType,
                                 "normal", "normal", 2, False)]
 
-        print(self.getAllRequiredTech(["marine", "barracks", "ultralisk"]))
+        print(self.getAllRequiredTech(["ultralisk"]))
     # progresses time by 1 unit
     # do this AFTER Collecting all necessary information for the current game tick, income, production etc
 
@@ -124,6 +124,13 @@ class GameState:
                 if len(settings.CONFIG[unitname]["requires"]) > 0:
                     # check each requirement for that unit
                     for each_requirement in settings.CONFIG[unitname]["requires"]:
-                        if each_requirement not in requiredtech:  # if we haven't added it to the list already, add it
+                        if each_requirement not in requiredtech:
+                            # print(each_requirement)
                             requiredtech.append(each_requirement)
-        return requiredtech
+                            # if there's more nested requirements
+                            if(len(settings.CONFIG[each_requirement]["requires"]) > 0):
+                                requiredtech.extend(  # let's just call this function again
+                                    self.getAllRequiredTech([each_requirement]))
+
+        # this gets rid of duplicates from nested tech tree because I was lazy
+        return list(dict.fromkeys(requiredtech))
