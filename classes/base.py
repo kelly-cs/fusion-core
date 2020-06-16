@@ -1,4 +1,4 @@
-from unit import Unit
+from . import unit
 
 
 class Base:
@@ -35,7 +35,7 @@ class Base:
         self.workersBeingTransferredFromGasToMins = []
 
         # ZERG
-        if(self.raceType="z"):
+        if(self.raceType == "z"):
             self.currentlarva = 3  # start the game with 3 active.
             self.larvemax = 3  # max that can produce normally (via larvatimer)
             # max that can exist (with the help of a queen)
@@ -56,7 +56,7 @@ class Base:
             self.zergUnitsProducing = []
 
         # TERRAN
-        if(self.raceType="t"):
+        if(self.raceType == "t"):
 
             self.isOrbital = false
             self.isTurningIntoOrbital = 0
@@ -64,7 +64,7 @@ class Base:
             self.orbitalConstructionTimeRemaining = 0
 
         # PROTOSS
-        if(self.raceType="p"):
+        if(self.raceType == "p"):
             self.energy = 50  # starting energy for protoss nexus
             self.chronoCost = 50  # cost for chrono boost
             self.isChronoBoosted = false  # is this structure chrono boosted?
@@ -74,8 +74,8 @@ class Base:
         self.tick = 0  # amt of elapsed game time since this base was made
 
         try:
-            if(self.isUnderConstruction)
-            self.constructionTimeRemaining = self.constructionTime
+            if(self.isUnderConstruction):
+                self.constructionTimeRemaining = self.constructionTime
         except:
             print(
                 "Something happened when initializing UnderConstruction for Base: " + str(e))
@@ -99,7 +99,7 @@ class Base:
         # PROTOSS
 
         # OTHER
-        if(self.raceType="p" or (self.raceType="t" and self.isOrbital)):
+        if(self.raceType == "p" or (self.raceType == "t" and self.isOrbital)):
             if(self.energy < self.maxenergy):
                 self.energy += self.energyRegenRate
 
@@ -145,12 +145,12 @@ class Base:
     # returns false if action failed/was not possible
     def makeWorker(self):
         # build as many workers as you want, if larvae exist.
-        if(self.raceType="z" and self.currentlarva > 0):
+        if(self.raceType == "z" and self.currentlarva > 0):
             self.currentlarva -= 1
             self.currentWorkerProduction.append(self.timeToBuildWorker)
             return true
         # only 1 worker can be built at a time
-        elif((self.raceType="p" or self.raceType="t") and len(self.currentlyBuildingWorker) == 0):
+        elif((self.raceType == "p" or self.raceType == "t") and len(self.currentlyBuildingWorker) == 0):
             self.currentWorkerProduction.append(self.timeToBuildWorker)
             return true
         else:

@@ -1,10 +1,11 @@
-from base import Base
+from . import base
 
 
 class GameState:
-    def __init__(self, race, maxticks):
+    def __init__(self, race, maxticks, goalUnits):
         # this will contain base objects, which contain workers. Income is based on amt of workers at a given base (it changes based on saturation)
-
+        # should be an array containing unit names/upgrade names as indicated in units.ini
+        self.goal = goalUnits
         self.units = []  # all owned units/buildings/techs.
         self.mins = 50
         self.gas = 0
@@ -21,7 +22,9 @@ class GameState:
                                 "transferToGas", "transferToMins", "transferToBase", "chronoboost"]
         # we are assuming that all queens will be used to inject always, and that all orbitals will always make MULEs.
         # side tip - mules can mine at the same time an SCV is, so it doesn't mess with calculations.
-        self.bases = [Base(self.startingWorkers, self.raceType, "normal", "normal", 2, false))]  # initialize first base.
+        # initialize first base.
+        self.bases = [base.Base(self.startingWorkers, self.raceType,
+                                "normal", "normal", 2, False)]
 
     # progresses time by 1 unit
     # do this AFTER Collecting all necessary information for the current game tick, income, production etc
@@ -30,7 +33,7 @@ class GameState:
             base.tick()
 
     def getIncomeThisTick():
-        incomeThisTick=0
+        incomeThisTick = 0
         for base in self.bases:  # check each base for income
             incomeThisTick += base.getIncome()
         return incomeThisTick
@@ -43,8 +46,9 @@ class GameState:
 
 
 # takes a list of bases, and tries each one to see if we can make a worker there
+
     def canBuildWorker(bases):
-        availableSupply=self.supply - self.usedSupply
+        availableSupply = self.supply - self.usedSupply
 
         if(self.raceType == "z"):
             for base in bases:
@@ -55,7 +59,7 @@ class GameState:
                 if(availableSupply >= 1 and len(base.currentWorkerProduction) == 0 and self.mins >= 50):
                     return true
 
-    def canBuildSupply(bases)
+    def canBuildSupply(bases):
         if(self.raceType == "z"):
             for base in bases:
                 if(base.currentlarva >= 1 and self.mins >= 100):
@@ -64,7 +68,7 @@ class GameState:
             if(self.mins >= 100):
                 return true
 
-    def canExpand()
+    def canExpand():
         if(self.raceType == "z"):
             if(self.mins >= 300):
                 return true
@@ -72,25 +76,26 @@ class GameState:
             if(self.mins >= 400):
                 return true
 
-    def canTransition()
+    def canTransition():
         if(self.allowedTransitions > 0):
             return true
         else:
             return false
 
     def canBuildUnit(unit):
-        availableSupply=self.supply - self.usedSupply
-        minCost=50  # lookup from config, given unit name
-        gasCost=0  # lookup from config, given unit name
-        supplyCost=1  # lookup from config, given unit name
+        availableSupply = self.supply - self.usedSupply
+        minCost = 50  # lookup from config, given unit name
+        gasCost = 0  # lookup from config, given unit name
+        supplyCost = 1  # lookup from config, given unit name
         if(hasTechFor(unit)):
             if(self.raceType == "z"):
                 for base in self.bases:
-                    if(base.currentlarva >= 1 and self.mins >= minCost and availableSupply >= supplyCost)
+                    if(base.currentlarva >= 1 and self.mins >= minCost and availableSupply >= supplyCost):
                         return true
         else:
+            pass
 
     def hasTechFor(unit):
         # refer to config
-        
+
         return true
