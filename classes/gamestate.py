@@ -1,8 +1,13 @@
 from . import base
+import os.path
+import json
 
 
 class GameState:
     def __init__(self, race, maxticks, goalUnits):
+        self.config = json.load(
+            open(os.path.dirname(__file__) + '/../config/units.ini'))
+        print(self.config["marine"])
         # this will contain base objects, which contain workers. Income is based on amt of workers at a given base (it changes based on saturation)
         # should be an array containing unit names/upgrade names as indicated in units.ini
         self.goal = goalUnits

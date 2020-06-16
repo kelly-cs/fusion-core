@@ -1,5 +1,10 @@
+import json
+import os.path
+
+
 class Unit:
     def __init__(self, unitname, underconstruction):
+
         self.name = unitname  # see config
         self.underConstruction = underconstruction  # true or false
         self.timeToConstruct = 12  # default for workers

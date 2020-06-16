@@ -17,6 +17,7 @@ class Base:
         self.constructionTime = 71  # amt of time to build a base
         self.constructionTimeRemaining = 0  # amt of time remaining to construct this base
         self.timeToBuildWorker = 12  # default
+
         # "z, t, or p" to represent zerg, terran, or protoss.
         self.raceType = race
         self.energyRegenRate = 0.7875  # every second, add this to energy.
@@ -33,6 +34,8 @@ class Base:
         # this is a list that will just contain timers represnting workers [4, 11, 15]
         self.workersBeingTransferredFromMinsToGas = []
         self.workersBeingTransferredFromGasToMins = []
+        # generally how long it takes for a worker to move to and from building something (one way)
+        self.workerTravelTimeToBuild = 3
 
         # ZERG
         if(self.raceType == "z"):
@@ -54,6 +57,8 @@ class Base:
             self.injectTimeRemaining = 0
             # array containing all active non-worker units being made
             self.zergUnitsProducing = []
+            # only used for zerg, since these are also production buildings.
+            self.newUnits = []
 
         # TERRAN
         if(self.raceType == "t"):
@@ -62,13 +67,15 @@ class Base:
             self.isTurningIntoOrbital = 0
             self.orbitalConstructionTime = 25
             self.orbitalConstructionTimeRemaining = 0
+            # this will be an array of timers, for occupied SCVs.
+            self.workersCurrentlyBuilding = []
 
         # PROTOSS
         if(self.raceType == "p"):
             self.energy = 50  # starting energy for protoss nexus
             self.chronoCost = 50  # cost for chrono boost
             self.isChronoBoosted = false  # is this structure chrono boosted?
-
+            # arbitrary - this will assume how long your probe is out of mining to build something.
         # array containing a timer on how long the worker will take to be done.
         self.currentWorkerProduction = []
         self.tick = 0  # amt of elapsed game time since this base was made
@@ -89,7 +96,7 @@ class Base:
             if(self.zergUnitsProducing[x].buildTimeRemaining > 0):
                 self.zergUnitsProducing[x].tick()
             else:
-
+                self.newUnits.append(self.zergUnitsProducing[x])
                 del self.zergUnitsProducing[x]
                 if(x > 0):
                     x = - 1  # this prevents it from messing up the index we're at
@@ -155,3 +162,12 @@ class Base:
             return true
         else:
             return false
+
+    def getWorkers(self):
+        return [self.workersOnMinerals, self.geysers[0], self.geysers[1]]
+
+    def getProductionQueue(self):
+        if(self.raceType == "z"):
+            return[self.currentWorkerProduction, self.zergUnitsProducing]
+        else:
+            return[self.currentWorkerProduction]
