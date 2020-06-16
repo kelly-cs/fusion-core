@@ -1,3 +1,6 @@
+from unit import Unit
+
+
 class Base:
     def __init__(self, startingworkers, race, mineraltype, gastype, geysers, underconstruction):
         # ALL WORKERS ARE SENT TO MINERALS BY DEFAULT, until a transfer order is made.
@@ -13,6 +16,7 @@ class Base:
         self.isUnderConstruction = underconstruction  # true or false
         self.constructionTime = 71  # amt of time to build a base
         self.constructionTimeRemaining = 0  # amt of time remaining to construct this base
+        self.timeToBuildWorker = 12  # default
         # "z, t, or p" to represent zerg, terran, or protoss.
         self.raceType = race
         self.energyRegenRate = 0.7875  # every second, add this to energy.
@@ -48,7 +52,7 @@ class Base:
             self.injectTime = 40
             # this is how long is remaining to produce injectAmt of larva, but only if isInjected is active (1)
             self.injectTimeRemaining = 0
-            # array containing all active eggs that are being made.
+            # array containing all active non-worker units being made
             self.zergUnitsProducing = []
 
         # TERRAN
@@ -137,10 +141,17 @@ class Base:
         return income  # return as array
 
     # tell this base to make a worker - assumes that money is already spent by parent.
+    # returns true if action succeeded/was possible
+    # returns false if action failed/was not possible
     def makeWorker(self):
+        # build as many workers as you want, if larvae exist.
         if(self.raceType="z" and self.currentlarva > 0):
             self.currentlarva -= 1
-            self.zergUnitsProducing.append(Unit("worker", true))
-        elif(self.raceType="t" and self.currentlyBuildingWorker == 0):
-            self.currentlyBuildingWorker = 1
-            self.
+            self.currentWorkerProduction.append(self.timeToBuildWorker)
+            return true
+        # only 1 worker can be built at a time
+        elif((self.raceType="p" or self.raceType="t") and len(self.currentlyBuildingWorker) == 0):
+            self.currentWorkerProduction.append(self.timeToBuildWorker)
+            return true
+        else:
+            return false
