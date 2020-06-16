@@ -1,7 +1,9 @@
 from . import unit
+from . import gamestate
+from . import settings
 
 
-class Base:
+class Base():
     def __init__(self, startingworkers, race, mineraltype, gastype, geysers, underconstruction):
         # ALL WORKERS ARE SENT TO MINERALS BY DEFAULT, until a transfer order is made.
         # this is only for the 1st starting base.
@@ -86,6 +88,9 @@ class Base:
         except:
             print(
                 "Something happened when initializing UnderConstruction for Base: " + str(e))
+
+        # let's make a marine and see what happens
+        # self.testUnit = unit.Unit("ultraliskcavern", True)
 
     # updates 1 game second for everything in this object
 
