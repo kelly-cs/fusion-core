@@ -90,7 +90,7 @@ class Base():
                 "Something happened when initializing UnderConstruction for Base: " + str(e))
 
         # let's make a marine and see what happens
-        # self.testUnit = unit.Unit("ultraliskcavern", True)
+        # self.testUnit = unit.Unit("ghost", True)
 
     # updates 1 game second for everything in this object
 

@@ -22,6 +22,7 @@ class GameState:
         # allowed transitions between minerals/gas. will increase overhead as this rises.
         self.allowedTransitions = 6
         # how long will the simulation be allowed to go for? Each tick = 1 second ingame
+        self.tick = 0
         self.maxTicks = maxticks
         self.possibleActions = ["worker", "supply", "build",
                                 "transferToGas", "transferToMins", "transferToBase", "chronoboost"]
@@ -31,12 +32,15 @@ class GameState:
         self.bases = [base.Base(self.startingWorkers, self.raceType,
                                 "normal", "normal", 2, False)]
 
+        print(self.getAllRequiredTech(["marine", "barracks", "ultralisk"]))
     # progresses time by 1 unit
     # do this AFTER Collecting all necessary information for the current game tick, income, production etc
 
     def tick():
+        print(self.tick)
         for base in self.bases:
             base.tick()
+        tick += 1
 
     def getIncomeThisTick():
         incomeThisTick = 0
@@ -48,12 +52,16 @@ class GameState:
     def attemptAction():
         for action in self.possibileActions:
             if(action == "worker"):
-                attemptWorker(self.bases)
+                if(canBuildWorker(self.bases)):
+                    print("You can build a worker")
+            elif(action == "supply"):
+                if(canBuildSupply(self.bases)):
+                    print("You can build supply!")
+            elif(action == "build"):
+                pass
+                # takes a list of bases, and tries each one to see if we can make a worker there
 
-
-# takes a list of bases, and tries each one to see if we can make a worker there
-
-    def canBuildWorker(bases):
+    def canBuildWorker(self, bases):
         availableSupply = self.supply - self.usedSupply
 
         if(self.raceType == "z"):
@@ -65,7 +73,7 @@ class GameState:
                 if(availableSupply >= 1 and len(base.currentWorkerProduction) == 0 and self.mins >= 50):
                     return true
 
-    def canBuildSupply(bases):
+    def canBuildSupply(self, bases):
         if(self.raceType == "z"):
             for base in bases:
                 if(base.currentlarva >= 1 and self.mins >= 100):
@@ -74,7 +82,7 @@ class GameState:
             if(self.mins >= 100):
                 return true
 
-    def canExpand():
+    def canExpand(self):
         if(self.raceType == "z"):
             if(self.mins >= 300):
                 return true
@@ -82,13 +90,13 @@ class GameState:
             if(self.mins >= 400):
                 return true
 
-    def canTransition():
+    def canTransition(self):
         if(self.allowedTransitions > 0):
             return true
         else:
             return false
 
-    def canBuildUnit(unit):
+    def canBuildUnit(self, unit):
         availableSupply = self.supply - self.usedSupply
         minCost = 50  # lookup from config, given unit name
         gasCost = 0  # lookup from config, given unit name
@@ -101,7 +109,21 @@ class GameState:
         else:
             pass
 
-    def hasTechFor(unit):
+    def hasTechFor(self, unit):
         # refer to config
 
         return true
+
+    # takes a list of strings representing unit names to figure out what tech we need
+    # [ "marine", "firebat" ]
+    def getAllRequiredTech(self, composition):
+        requiredtech = []  # return a list of all required items, using the config file for help
+        for unitname in composition:  # for all things you want to make
+            if unitname in settings.CONFIG:  # if these things are things you can actually make
+                # if there's any requirements
+                if len(settings.CONFIG[unitname]["requires"]) > 0:
+                    # check each requirement for that unit
+                    for each_requirement in settings.CONFIG[unitname]["requires"]:
+                        if each_requirement not in requiredtech:  # if we haven't added it to the list already, add it
+                            requiredtech.append(each_requirement)
+        return requiredtech
