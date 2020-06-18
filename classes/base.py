@@ -19,6 +19,7 @@ class Base():
         self.constructionTime = 71  # amt of time to build a base
         self.constructionTimeRemaining = 0  # amt of time remaining to construct this base
         self.timeToBuildWorker = 12  # default
+        self.tickNum = 0
 
         # "z, t, or p" to represent zerg, terran, or protoss.
         self.raceType = race
@@ -30,7 +31,7 @@ class Base():
         # about how long it takes to transfer workers from 1 base to another
         self.timetoTransferBetweenBases = 15
         # this is a list that will just contain timers represnting workers [4, 11, 15]
-        self.workersBeingTransferredBetweenBases = []
+        self.workersBeingTransferredToThisBase = []
         # about how long it takes to transfer workers from minerals to gas, and vice versa
         self.timetoTransferMinsToGas = 3
         # this is a list that will just contain timers represnting workers [4, 11, 15]
@@ -94,7 +95,7 @@ class Base():
 
     # updates 1 game second for everything in this object
 
-    def tick(self):
+    def tickUp(self):
 
         # ZERG
         for x in range(len(self.zergUnitsProducing)):
@@ -114,39 +115,40 @@ class Base():
         if(self.raceType == "p" or (self.raceType == "t" and self.isOrbital)):
             if(self.energy < self.maxenergy):
                 self.energy += self.energyRegenRate
+        self.tickNum += 1
 
     # returns an array [minerals, gas] for all income gained this tick. Should be ran before "tick" for accurate income.
     # first 2-3 ticks are never offering income.
     def getIncomeThisTick(self):
-        if(self.tick < 3):
+        if(self.tickNum < 3):
             return [0, 0]
 
         mineralincome = 0
         gasincome = 0
 
         if(self.mineraltype == "normal"):
-            if(workersOnMinerals <= 16):
-                mineralincome = workersOnMinerals * 0.958
-            elif(workersOnMinerals == 17):
-                mineralincome = workersOnMinerals * 0.916
-            elif(workersOnMinerals >= 18):
-                mineralincome = workersOnMinerals * 0.819
+            if(self.workersOnMinerals <= 16):
+                mineralincome = self.workersOnMinerals * 0.958
+            elif(self.workersOnMinerals == 17):
+                mineralincome = self.workersOnMinerals * 0.916
+            elif(self.workersOnMinerals >= 18):
+                mineralincome = self.workersOnMinerals * 0.819
         elif(self.mineraltype == "rich"):
-            if(workersOnMinerals <= 12):
-                mineralincome = workersOnMinerals * 1.375
-            elif(workersOnMinerals >= 13 and workersOnMinerals < 18):
-                mineralincome = workersOnMinerals * 1.22
-            elif(workersOnMinerals >= 18):
-                mineralincome = workersOnMinerals * 1.111
+            if(self.workersOnMinerals <= 12):
+                mineralincome = self.workersOnMinerals * 1.375
+            elif(self.workersOnMinerals >= 13 and self.workersOnMinerals < 18):
+                mineralincome = self.workersOnMinerals * 1.22
+            elif(self.workersOnMinerals >= 18):
+                mineralincome = self.workersOnMinerals * 1.111
 
-        if(geysers[0] <= 2):
-            gasincome += geysers[0] * 1
-        elif(geysers[0] == 3):
+        if(self.geysers[0] <= 2):
+            gasincome += self.geysers[0] * 1
+        elif(self.geysers[0] == 3):
             gasincome += 2.666
 
-        if(geysers[1] <= 2):
-            gasincome += geysers[1] * 1
-        elif(geysers[1] == 3):
+        if(self.geysers[1] <= 2):
+            gasincome += self.geysers[1] * 1
+        elif(self.geysers[1] == 3):
             gasincome += 2.666
 
         income = [mineralincome, gasincome]

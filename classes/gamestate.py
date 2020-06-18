@@ -2,11 +2,10 @@ from . import base
 import os.path
 import json
 from . import settings
-from collections import Counter
 
 
 class GameState:
-    def __init__(self, race, maxticks, maxwait, goalUnits):
+    def __init__(self, race, maxticks, goalUnits):
 
         # print(self.config["marine"])
         # this will contain base objects, which contain workers. Income is based on amt of workers at a given base (it changes based on saturation)
@@ -16,8 +15,7 @@ class GameState:
         self.units = []  # all owned units/buildings/techs.
         self.mins = 50
         self.gas = 0
-        # this is to prevent the program from wasting too much time waiting around
-        self.maxWait = maxwait
+
         # all logic about when we can build things should be handled here, and not in the children.
         self.usedSupply = 12  # default
         self.supply = 15  # default
@@ -26,7 +24,7 @@ class GameState:
         # allowed transitions between minerals/gas. will increase overhead as this rises.
         self.allowedTransitions = 6
         # how long will the simulation be allowed to go for? Each tick = 1 second ingame
-        self.tick = 0
+        self.tickNum = 0
         self.maxTicks = maxticks
         self.possibleActions = ["worker", "supply", "build",
                                 "transferToGas", "transferToMins", "transferToBase", "chronoboost", "wait"]
@@ -35,31 +33,38 @@ class GameState:
         # initialize first base.
         self.bases = [base.Base(self.startingWorkers, self.raceType,
                                 "normal", "normal", 2, False)]
-
         self.simulationResults = self.runSimulation()
         # print(self.getAllRequiredTech(["ultralisk", "ultralisk", "hydralisk", "zergling"]))
 
     # We start from 2 p
     def runSimulation(self):
-
+        for x in range(0, 10):
+            self.tick()
         # progresses time by 1 unit
         # do this AFTER Collecting all necessary information for the current game tick, income, production etc
 
     def tick(self):
-        print(self.tick)
-        income = getIncomeThisTick()
+        print("Tick: ", self.tickNum)
+        income = self.getIncomeThisTick()
         print("Income: ", income)
         print("Minerals: ", self.mins)
         print("Gas: ", self.gas)
+        self.mins += income[0]  # mins
+        self.gas += income[1]  # gas
         for base in self.bases:
-            base.tick()
-        tick += 1
+            # i had to rename this because it was clashing somehow with the "tick" function in this file. Will need to look into..
+            base.tickUp()
+        self.tickNum += 1
 
+    # returns a list [ minerals, gas ]
     def getIncomeThisTick(self):
-        incomeThisTick = 0
+        incomeThisTick = [0, 0]
         for base in self.bases:  # check each base for income
-            incomeThisTick += base.getIncome()
-        return incomeThisTick
+            # [ minerals, gas ]
+            incomeThisTick[0] += base.getIncomeThisTick()[0]
+            # we'll pare this down later because this is stupid
+            incomeThisTick[1] += base.getIncomeThisTick()[1]
+        return incomeThisTick  # as a list [ mins, gas ]
 
     # we will explore all possible actions at this exact game tick. Do this before each tick to get every possibility.
     def attemptAction(self):
@@ -127,8 +132,8 @@ class GameState:
         requiredtech = getAllRequiredTech(unit)
 
         for each in requiredtech:
-            if each not in self.units  # if there is still a tech to be made
-            return False
+            if each not in self.units:  # if there is still a tech to be made
+                return False
         return True
 
     # takes a list of strings representing unit names to figure out what tech we need
