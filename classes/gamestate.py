@@ -2,18 +2,22 @@ from . import base
 import os.path
 import json
 from . import settings
+from collections import Counter
 
 
 class GameState:
-    def __init__(self, race, maxticks, goalUnits):
+    def __init__(self, race, maxticks, maxwait, goalUnits):
 
         # print(self.config["marine"])
         # this will contain base objects, which contain workers. Income is based on amt of workers at a given base (it changes based on saturation)
         # should be an array containing unit names/upgrade names as indicated in units.ini
-        self.goal = goalUnits
+        self.requiredTech = self.getAllRequiredTech(goalUnits) + goalUnits
+        print(self.requiredTech)
         self.units = []  # all owned units/buildings/techs.
         self.mins = 50
         self.gas = 0
+        # this is to prevent the program from wasting too much time waiting around
+        self.maxWait = maxwait
         # all logic about when we can build things should be handled here, and not in the children.
         self.usedSupply = 12  # default
         self.supply = 15  # default
@@ -25,31 +29,40 @@ class GameState:
         self.tick = 0
         self.maxTicks = maxticks
         self.possibleActions = ["worker", "supply", "build",
-                                "transferToGas", "transferToMins", "transferToBase", "chronoboost"]
+                                "transferToGas", "transferToMins", "transferToBase", "chronoboost", "wait"]
         # we are assuming that all queens will be used to inject always, and that all orbitals will always make MULEs.
         # side tip - mules can mine at the same time an SCV is, so it doesn't mess with calculations.
         # initialize first base.
         self.bases = [base.Base(self.startingWorkers, self.raceType,
                                 "normal", "normal", 2, False)]
 
-        print(self.getAllRequiredTech(["ultralisk"]))
-    # progresses time by 1 unit
-    # do this AFTER Collecting all necessary information for the current game tick, income, production etc
+        self.simulationResults = self.runSimulation()
+        # print(self.getAllRequiredTech(["ultralisk", "ultralisk", "hydralisk", "zergling"]))
 
-    def tick():
+    # We start from 2 p
+    def runSimulation(self):
+
+        # progresses time by 1 unit
+        # do this AFTER Collecting all necessary information for the current game tick, income, production etc
+
+    def tick(self):
         print(self.tick)
+        income = getIncomeThisTick()
+        print("Income: ", income)
+        print("Minerals: ", self.mins)
+        print("Gas: ", self.gas)
         for base in self.bases:
             base.tick()
         tick += 1
 
-    def getIncomeThisTick():
+    def getIncomeThisTick(self):
         incomeThisTick = 0
         for base in self.bases:  # check each base for income
             incomeThisTick += base.getIncome()
         return incomeThisTick
 
     # we will explore all possible actions at this exact game tick. Do this before each tick to get every possibility.
-    def attemptAction():
+    def attemptAction(self):
         for action in self.possibileActions:
             if(action == "worker"):
                 if(canBuildWorker(self.bases)):
@@ -67,34 +80,34 @@ class GameState:
         if(self.raceType == "z"):
             for base in bases:
                 if(availableSupply >= 1 and base.currentlarva >= 1 and self.mins >= 50):
-                    return true
+                    return True
         else:
             for base in bases:
                 if(availableSupply >= 1 and len(base.currentWorkerProduction) == 0 and self.mins >= 50):
-                    return true
+                    return True
 
     def canBuildSupply(self, bases):
         if(self.raceType == "z"):
             for base in bases:
                 if(base.currentlarva >= 1 and self.mins >= 100):
-                    return true
+                    return True
         else:
             if(self.mins >= 100):
-                return true
+                return True
 
     def canExpand(self):
         if(self.raceType == "z"):
             if(self.mins >= 300):
-                return true
+                return True
         else:
             if(self.mins >= 400):
-                return true
+                return True
 
     def canTransition(self):
         if(self.allowedTransitions > 0):
-            return true
+            return True
         else:
-            return false
+            return False
 
     def canBuildUnit(self, unit):
         availableSupply = self.supply - self.usedSupply
@@ -105,17 +118,23 @@ class GameState:
             if(self.raceType == "z"):
                 for base in self.bases:
                     if(base.currentlarva >= 1 and self.mins >= minCost and availableSupply >= supplyCost):
-                        return true
+                        return True
         else:
             pass
 
     def hasTechFor(self, unit):
         # refer to config
+        requiredtech = getAllRequiredTech(unit)
 
-        return true
+        for each in requiredtech:
+            if each not in self.units  # if there is still a tech to be made
+            return False
+        return True
 
     # takes a list of strings representing unit names to figure out what tech we need
     # [ "marine", "firebat" ]
+    # we could put a failsafe in here to check for race type, but I'd have to go dump it in
+    # the CONFIG file. I'll get around to it.
     def getAllRequiredTech(self, composition):
         requiredtech = []  # return a list of all required items, using the config file for help
         for unitname in composition:  # for all things you want to make
@@ -133,4 +152,8 @@ class GameState:
                                     self.getAllRequiredTech([each_requirement]))
 
         # this gets rid of duplicates from nested tech tree because I was lazy
+        # this will cause issues later when we have units that morph from other units
+        # (i.e. banelings). I can probably just fix this after the fact by requiring
+        # the zerglings to be produced to be at least the same as the expected baneling count,
+        # or the amount of templars to be at least double the amount of expected archons.
         return list(dict.fromkeys(requiredtech))
