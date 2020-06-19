@@ -118,9 +118,9 @@ class Base():
         self.tickNum += 1
 
     # returns an array [minerals, gas] for all income gained this tick. Should be ran before "tick" for accurate income.
-    # first 2-3 ticks are never offering income.
+    # first 5 ticks are never offering income.
     def getIncomeThisTick(self):
-        if(self.tickNum < 3):
+        if(self.tickNum < 5):
             return [0, 0]
 
         mineralincome = 0

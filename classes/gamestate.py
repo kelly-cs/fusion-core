@@ -3,9 +3,12 @@ import os.path
 import json
 from . import settings
 
+# The GameState represents a single game, not all possible simulations.
+# The Simulation module will create new GameStates when branching into different
+
 
 class GameState:
-    def __init__(self, race, maxticks, goalUnits):
+    def __init__(self, race="z", maxticks=1000, goalUnits=[], currentTarget=[], currentUnits=[], currentProductionBuildings=[], currentTechBuildings=[]):
 
         # print(self.config["marine"])
         # this will contain base objects, which contain workers. Income is based on amt of workers at a given base (it changes based on saturation)
@@ -38,7 +41,7 @@ class GameState:
 
     # We start from 2 p
     def runSimulation(self):
-        for x in range(0, 10):
+        for x in range(0, 31):
             self.tick()
         # progresses time by 1 unit
         # do this AFTER Collecting all necessary information for the current game tick, income, production etc
