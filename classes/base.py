@@ -13,7 +13,7 @@ class Base():
         # how many workers are mining minerals here actively
         self.workersOnMinerals = startingworkers
         self.builtGeysers = 0  # amt of built geysers
-        # array containing amt of workers at each geyser. 0 and 1 index can each have workers.
+        # array containing amt of workers at each geyser. 0 and 1 index can each have workers. (so, [2,1] to represent 2 on the first, 1 on the second)
         self.geysers = [0, 0]
         self.isUnderConstruction = underconstruction  # true or false
         self.constructionTime = 71  # amt of time to build a base
@@ -162,13 +162,13 @@ class Base():
         if(self.raceType == "z" and self.currentlarva > 0):
             self.currentlarva -= 1
             self.currentWorkerProduction.append(self.timeToBuildWorker)
-            return true
+            return True
         # only 1 worker can be built at a time
         elif((self.raceType == "p" or self.raceType == "t") and len(self.currentlyBuildingWorker) == 0):
             self.currentWorkerProduction.append(self.timeToBuildWorker)
-            return true
+            return True
         else:
-            return false
+            return False
 
     def getWorkers(self):
         return [self.workersOnMinerals, self.geysers[0], self.geysers[1]]
@@ -178,3 +178,19 @@ class Base():
             return[self.currentWorkerProduction, self.zergUnitsProducing]
         else:
             return[self.currentWorkerProduction]
+
+    # This function will move 1 worker from minerals to Gas, putting them into the wait queue to move in.
+    def transferMinsToGas(self):
+        return None
+
+    # This function will move 1 worker from Gas to minerals, from whatever geyser it gets to first. It will be put in a little queue to move.
+    def transferGasToMins(self):
+        return None
+
+    # this will immediately remove a worker from this base.
+    def transferWorkerOutOfBase(self):
+        return None
+
+    # this will add a worker to the "transferring to base" queue, which is about 10-15 seconds, in which case it will be sent to the mineral line.
+    def transferWorkerIntoBase(self):
+        return None

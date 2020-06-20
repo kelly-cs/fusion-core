@@ -8,7 +8,7 @@ from . import settings
 
 
 class GameState:
-    def __init__(self, race="z", maxticks=1000, goalUnits=[], currentTarget=[], currentUnits=[], currentProductionBuildings=[], currentTechBuildings=[]):
+    def __init__(self, race="z", maxticks=1000, currentTick=0, goalUnits=[], _currentTarget=None, currentUnits=[], _currentProductionBuildings=[], _currentTechBuildings=[], _currentBuildingsInConstruction=[], _minerals=0, _gas=0, _currentBases=[]):
 
         # print(self.config["marine"])
         # this will contain base objects, which contain workers. Income is based on amt of workers at a given base (it changes based on saturation)
@@ -16,33 +16,52 @@ class GameState:
         self.requiredTech = self.getAllRequiredTech(goalUnits) + goalUnits
         print(self.requiredTech)
         self.units = []  # all owned units/buildings/techs.
-        self.mins = 50
-        self.gas = 0
+        self.mins = _minerals
+        self.gas = _gas
+        self.currentTarget = _currentTarget
 
         # all logic about when we can build things should be handled here, and not in the children.
         self.usedSupply = 12  # default
         self.supply = 15  # default
         self.raceType = race
+        self.currentProductionBuildings = _currentProductionBuildings
+        self.currentTechBuildings = _currentTechBuildings
+        self.currentBuildingsInConstruction = _currentBuildingsInConstruction
         self.startingWorkers = 12
+        self.currentBuildOrder = []  # in format: [["unit",tickNum],["tech",tickNum]]
         # allowed transitions between minerals/gas. will increase overhead as this rises.
         self.allowedTransitions = 6
         # how long will the simulation be allowed to go for? Each tick = 1 second ingame
-        self.tickNum = 0
+        self.tickNum = currentTick
         self.maxTicks = maxticks
-        self.possibleActions = ["worker", "supply", "build",
+        self.possibleActions = ["worker", "supply", "build", "geyser",
                                 "transferToGas", "transferToMins", "transferToBase", "chronoboost", "wait"]
         # we are assuming that all queens will be used to inject always, and that all orbitals will always make MULEs.
         # side tip - mules can mine at the same time an SCV is, so it doesn't mess with calculations.
         # initialize first base.
-        self.bases = [base.Base(self.startingWorkers, self.raceType,
-                                "normal", "normal", 2, False)]
+        if(_currentBases == []):
+            self.bases = [base.Base(self.startingWorkers, self.raceType,
+                                    "normal", "normal", 2, False)]
+
         self.simulationResults = self.runSimulation()
         # print(self.getAllRequiredTech(["ultralisk", "ultralisk", "hydralisk", "zergling"]))
 
     # We start from 2 p
     def runSimulation(self):
-        for x in range(0, 31):
+        potential_orders = []
+        while self.tickNum < self.maxTicks:  # while we are not at the time limit
+            if(self.currentTarget == None):  # if there's not a target at this moment
+                for action in self.possibleActions:  # branch here and try all possibilities
+                    # append these possibilities to a build order
+                    potential_orders.append([action, self.tickNum])
+                    GameState(self.raceType, self.maxTicks,  # make a new object branching into this area of possibiltiies
+                              self.tickNum, self.requiredTech, action, self.units,)
+            else:
+                self.attemptAction(self.currentTarget)
             self.tick()
+            self.tickNum += 1
+
+        return potential_orders
         # progresses time by 1 unit
         # do this AFTER Collecting all necessary information for the current game tick, income, production etc
 
@@ -122,7 +141,7 @@ class GameState:
         minCost = 50  # lookup from config, given unit name
         gasCost = 0  # lookup from config, given unit name
         supplyCost = 1  # lookup from config, given unit name
-        if(hasTechFor(unit)):
+        if(self.hasTechFor(unit)):
             if(self.raceType == "z"):
                 for base in self.bases:
                     if(base.currentlarva >= 1 and self.mins >= minCost and availableSupply >= supplyCost):
@@ -130,9 +149,15 @@ class GameState:
         else:
             pass
 
+    def buildUnit(self, unit):
+        return None
+
+    def buildSupply(self):
+        return None
+
     def hasTechFor(self, unit):
         # refer to config
-        requiredtech = getAllRequiredTech(unit)
+        requiredtech = self.getAllRequiredTech(unit)
 
         for each in requiredtech:
             if each not in self.units:  # if there is still a tech to be made
@@ -165,3 +190,44 @@ class GameState:
         # the zerglings to be produced to be at least the same as the expected baneling count,
         # or the amount of templars to be at least double the amount of expected archons.
         return list(dict.fromkeys(requiredtech))
+
+    def remainingTechToBuild(self):
+        tech = self.requiredTech
+        for requirements in tech:
+            if requirements in self.units:
+                tech.remove(requirements)
+        return tech
+
+    def attemptAction(self, action):
+        actionSuccess = False
+        # if you're trying to see if you can build a worker
+        if(action == "worker" and self.canBuildWorker(self.bases)):
+            for base in self.bases:  # tell all bases to make a worker
+                base.makeWorker()
+                actionSuccess = True
+        elif(action == "supply" and self.canBuildSupply(self.bases)):
+            # temporarily take 1 worker out of the mining pool to build, for duration of building + 5-10 seconds (if t or p)
+            # otherwise, just use a larva. buildSupply function will handle this.
+            self.buildSupply()
+            actionSuccess = True
+        # if the target in fact needs to be built
+        elif(action == "build"):
+            for each in self.remainingTechToBuild():  # check all things we can make
+                # if we are able to build it now, do so.
+                if(self.canBuildUnit(each)):
+                    self.buildUnit(each)
+                    actionSuccess = True
+        elif(action == "transferToGas"):
+            for base in self.bases:
+                # if the geysers aren't all occupied
+                if(base.builtGeysers > 0 and (base.geysers[0] < 3 or base.geysers[1] < 3)):
+                    base.transferMinsToGas()
+                    actionSuccess = True
+                    break  # we only want to do one at a time.
+        elif(action == "transferToMins"):
+            for base in self.bases:
+                # if there is at least 1 worker in a geyser
+                if(base.builtGeysers > 0 and (base.geysers[0] > 0 or base.geysers[1] > 0)):
+                    base.transferGasToMins()
+                    actionSuccess = True
+                    break  # we only want to do one at a time.

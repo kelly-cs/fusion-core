@@ -17,5 +17,5 @@ if __name__ == "__main__":
 
     settings.init()  # runs settings
     # print(str(settings.CONFIG))
-    simulation = GameState("z", 100, goalUnits)  # run 100 seconds as zerg
+    simulation = GameState("z", 100, 0, goalUnits)  # run 100 seconds as zerg
     print(simulation.simulationResults)
