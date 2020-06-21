@@ -19,7 +19,7 @@ class GameState:
         self.mins = _minerals
         self.gas = _gas
         self.currentTarget = _currentTarget
-
+        self.bases = _currentBases
         # all logic about when we can build things should be handled here, and not in the children.
         self.usedSupply = 12  # default
         self.supply = 15  # default
@@ -39,7 +39,7 @@ class GameState:
         # we are assuming that all queens will be used to inject always, and that all orbitals will always make MULEs.
         # side tip - mules can mine at the same time an SCV is, so it doesn't mess with calculations.
         # initialize first base.
-        if(_currentBases == []):
+        if(self.bases == []):
             self.bases = [base.Base(self.startingWorkers, self.raceType,
                                     "normal", "normal", 2, False)]
 
@@ -55,9 +55,13 @@ class GameState:
                     # append these possibilities to a build order
                     potential_orders.append([action, self.tickNum])
                     GameState(self.raceType, self.maxTicks,  # make a new object branching into this area of possibiltiies
-                              self.tickNum, self.requiredTech, action, self.units,)
+                              self.tickNum, self.requiredTech, action, self.units, self.currentProductionBuildings, self.currentTechBuildings, self.currentBuildingsInConstruction, self.mins, self.gas, self.bases)
             else:
-                self.attemptAction(self.currentTarget)
+                # if we can perform our target action, let's clear our target for the next iteration. Otherwise we wait until we can do it.
+                # we will probably need to consider a few edge cases where the current target will be impossible unless something else is done, but it should be a
+                # pretty small portion of all possibilities.
+                if(self.attemptAction(self.currentTarget)):
+                    self.currentTarget = None
             self.tick()
             self.tickNum += 1
 
@@ -87,19 +91,6 @@ class GameState:
             # we'll pare this down later because this is stupid
             incomeThisTick[1] += base.getIncomeThisTick()[1]
         return incomeThisTick  # as a list [ mins, gas ]
-
-    # we will explore all possible actions at this exact game tick. Do this before each tick to get every possibility.
-    def attemptAction(self):
-        for action in self.possibileActions:
-            if(action == "worker"):
-                if(canBuildWorker(self.bases)):
-                    print("You can build a worker")
-            elif(action == "supply"):
-                if(canBuildSupply(self.bases)):
-                    print("You can build supply!")
-            elif(action == "build"):
-                pass
-                # takes a list of bases, and tries each one to see if we can make a worker there
 
     def canBuildWorker(self, bases):
         availableSupply = self.supply - self.usedSupply
@@ -164,10 +155,53 @@ class GameState:
                 return False
         return True
 
-    # takes a list of strings representing unit names to figure out what tech we need
-    # [ "marine", "firebat" ]
-    # we could put a failsafe in here to check for race type, but I'd have to go dump it in
-    # the CONFIG file. I'll get around to it.
+    def buildGeyser(self):
+        for base in self.bases:  # check all bases
+            if(self.raceType == "z"):
+                if(base.builtGeysers < 2 and self.mins >= 25):
+                    if(base.buildGeyser()):
+                        return True
+                return False
+            else:
+                if(base.builtGeysers < 2 and self.mins >= 75):
+                    if(base.buildGeyser()):
+                        return True
+                return False
+        return False
+        # if that base has a free geyser, start production on one.
+
+        return False
+
+    def transferToGas(self):
+        for base in self.bases:
+            # if the geysers aren't all occupied
+            if(base.builtGeysers > 0 and (base.geysers[0] < 3 or base.geysers[1] < 3)):
+                base.transferMinsToGas()
+                return True
+        return False
+
+    def transferToMins(self):
+        for base in self.bases:
+            # if there is at least 1 worker in a geyser
+            if(base.builtGeysers > 0 and (base.geysers[0] > 0 or base.geysers[1] > 0)):
+                base.transferGasToMins()
+                return True
+        return False
+
+    # attempts all bases to make 1 worker
+    # if successful, returns true and spends money/supply appropriately.
+    def makeWorker(self):
+        availableSupply = self.supply - self.usedSupply
+        if(self.mins >= 50 and availableSupply >= 1):
+            for base in self.bases:
+                if(base.makeWorker()):
+                    return True
+        return False
+        # takes a list of strings representing unit names to figure out what tech we need
+        # [ "marine", "firebat" ]
+        # we could put a failsafe in here to check for race type, but I'd have to go dump it in
+        # the CONFIG file. I'll get around to it.
+
     def getAllRequiredTech(self, composition):
         requiredtech = []  # return a list of all required items, using the config file for help
         for unitname in composition:  # for all things you want to make
@@ -198,36 +232,40 @@ class GameState:
                 tech.remove(requirements)
         return tech
 
+    # attempts an action in this current gamestate
+    # if it succeeds, returns true.
     def attemptAction(self, action):
         actionSuccess = False
         # if you're trying to see if you can build a worker
-        if(action == "worker" and self.canBuildWorker(self.bases)):
-            for base in self.bases:  # tell all bases to make a worker
-                base.makeWorker()
-                actionSuccess = True
-        elif(action == "supply" and self.canBuildSupply(self.bases)):
+        if(action == "worker"):
+            # tell 1 base to make a worker (break when done)
+            # make a worker at this base, and only this base.
+            self.makeWorker()
+            actionSuccess = True
+
+        elif(action == "supply"):
             # temporarily take 1 worker out of the mining pool to build, for duration of building + 5-10 seconds (if t or p)
             # otherwise, just use a larva. buildSupply function will handle this.
             self.buildSupply()
             actionSuccess = True
+
         # if the target in fact needs to be built
+        elif(action == "geyser"):
+            self.buildGeyser()
+
         elif(action == "build"):
             for each in self.remainingTechToBuild():  # check all things we can make
                 # if we are able to build it now, do so.
-                if(self.canBuildUnit(each)):
-                    self.buildUnit(each)
+                # try building a unit ( this will build as much as possible at this point in time)
+                if(self.buildUnit(each)):
                     actionSuccess = True
+
         elif(action == "transferToGas"):
-            for base in self.bases:
-                # if the geysers aren't all occupied
-                if(base.builtGeysers > 0 and (base.geysers[0] < 3 or base.geysers[1] < 3)):
-                    base.transferMinsToGas()
-                    actionSuccess = True
-                    break  # we only want to do one at a time.
+            if(self.transferToGas()):
+                actionSuccess = True  # we only want to do one at a time.
+
         elif(action == "transferToMins"):
-            for base in self.bases:
-                # if there is at least 1 worker in a geyser
-                if(base.builtGeysers > 0 and (base.geysers[0] > 0 or base.geysers[1] > 0)):
-                    base.transferGasToMins()
-                    actionSuccess = True
-                    break  # we only want to do one at a time.
+            if(self.transferToGas()):
+                actionSuccess = True  # we only want to do one at a time.
+
+        return actionSuccess

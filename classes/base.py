@@ -15,12 +15,20 @@ class Base():
         self.builtGeysers = 0  # amt of built geysers
         # array containing amt of workers at each geyser. 0 and 1 index can each have workers. (so, [2,1] to represent 2 on the first, 1 on the second)
         self.geysers = [0, 0]
+        self.geysersUnderConstruction = [False, False]
+        # time to build gas  = 21, can probably put into config
+        self.geysersRemainingTime = [21, 21]
         self.isUnderConstruction = underconstruction  # true or false
         self.constructionTime = 71  # amt of time to build a base
         self.constructionTimeRemaining = 0  # amt of time remaining to construct this base
         self.timeToBuildWorker = 12  # default
         self.tickNum = 0
-
+        self.iscurrentlyResearching = False  # true/false
+        self.currentResearch = "None"  # name of current research, from CONFIG/
+        # time remaining of current research, reduce by 1 per tick
+        self.currentResearchTime = 0
+        # start time of current research, from CONFIG.
+        self.currentResarchTimeRemaining = 0
         # "z, t, or p" to represent zerg, terran, or protoss.
         self.raceType = race
         self.energyRegenRate = 0.7875  # every second, add this to energy.
@@ -33,10 +41,12 @@ class Base():
         # this is a list that will just contain timers represnting workers [4, 11, 15]
         self.workersBeingTransferredToThisBase = []
         # about how long it takes to transfer workers from minerals to gas, and vice versa
-        self.timetoTransferMinsToGas = 3
+        self.timeToTransferMinsToGas = 3
         # this is a list that will just contain timers represnting workers [4, 11, 15]
         self.workersBeingTransferredFromMinsToGas = []
         self.workersBeingTransferredFromGasToMins = []
+        # list containing timers for how long it takes to build a refinery/gas extractor. Generally about 2-3 seconds/ticks.
+        self.workersBeingSentToBuildGas = []
         # generally how long it takes for a worker to move to and from building something (one way)
         self.workerTravelTimeToBuild = 3
 
@@ -78,6 +88,7 @@ class Base():
             self.energy = 50  # starting energy for protoss nexus
             self.chronoCost = 50  # cost for chrono boost
             self.isChronoBoosted = false  # is this structure chrono boosted?
+            self.workersCurrentlyBuilding = []
             # arbitrary - this will assume how long your probe is out of mining to build something.
         # array containing a timer on how long the worker will take to be done.
         self.currentWorkerProduction = []
@@ -98,14 +109,6 @@ class Base():
     def tickUp(self):
 
         # ZERG
-        for x in range(len(self.zergUnitsProducing)):
-            if(self.zergUnitsProducing[x].buildTimeRemaining > 0):
-                self.zergUnitsProducing[x].tick()
-            else:
-                self.newUnits.append(self.zergUnitsProducing[x])
-                del self.zergUnitsProducing[x]
-                if(x > 0):
-                    x = - 1  # this prevents it from messing up the index we're at
 
         # TERRAN
 
@@ -115,6 +118,7 @@ class Base():
         if(self.raceType == "p" or (self.raceType == "t" and self.isOrbital)):
             if(self.energy < self.maxenergy):
                 self.energy += self.energyRegenRate
+
         self.tickNum += 1
 
     # returns an array [minerals, gas] for all income gained this tick. Should be ran before "tick" for accurate income.
@@ -159,12 +163,12 @@ class Base():
     # returns false if action failed/was not possible
     def makeWorker(self):
         # build as many workers as you want, if larvae exist.
-        if(self.raceType == "z" and self.currentlarva > 0):
+        if(self.raceType == "z" and self.currentlarva > 0 and self.hasFreeProduction()):
             self.currentlarva -= 1
             self.currentWorkerProduction.append(self.timeToBuildWorker)
             return True
         # only 1 worker can be built at a time
-        elif((self.raceType == "p" or self.raceType == "t") and len(self.currentlyBuildingWorker) == 0):
+        elif((self.raceType == "p" or self.raceType == "t") and self.hasFreeProduciton()):
             self.currentWorkerProduction.append(self.timeToBuildWorker)
             return True
         else:
@@ -194,3 +198,75 @@ class Base():
     # this will add a worker to the "transferring to base" queue, which is about 10-15 seconds, in which case it will be sent to the mineral line.
     def transferWorkerIntoBase(self):
         return None
+
+    # Can you build a worker right now?
+    # T + P: Is there no workers/upgrades being built?
+    # Z: Is there larvae + no upgrades being built?
+    def hasFreeProduction(self):
+        if(self.raceType == "z" and self.currentlarva >= 1 and self.iscurrentlyResearching == False):
+            return True
+        elif(self.iscurrentlyResearching == False and self.isTurningIntoOrbital == False and self.currentWorkerProduction == []):
+            return True
+        else:
+            return False
+
+    def buildGeyser(self):
+        # to try and stop from building more geysers than are available
+        if(self.raceType == "z" and self.builtGeysers < 2 and len(self.workersBeingSentToBuildGas) < 2):
+            self.workersOnMinerals -= 1  # use workers from the mineral line
+            self.workersBeingSentToBuildGas.append(
+                self.timeToTransferMinsToGas)  # add a worker to a queue to build the gas
+            if(self.builtGeysers == 0):
+                # this will trigger the countdown timer each tick
+                self.geysersUnderConstruction[0] = True
+                return True
+            elif(self.builtGeysers == 1):
+                # this will trigger the countdown timer each tick
+                self.geysersUnderConstruction[1] = True
+                return True
+        return False
+
+    # when a geyser completes, run this function
+    # that is to say, when a timer reaches 0 in self.geyserRemainingTime, run this.
+
+    def geyserComplete(self):
+        if(self.raceType == "z"):
+            pass
+        else:
+            # if this is the first geyser for this base
+            if(self.builtGeysers == 0):
+                self.geysers[0] = 1  # add 1 worker to the first geyser
+                self.builtGeysers += 1
+                self.geysersUnderConstruction[0] = False
+            # if this is the second geyser for this baes
+            elif(builtGeysers == 1):
+                self.geysers[1] = 1  # add 1 worker to the second geyser.
+                self.builtGeysers += 1
+                self.geysersUnderConstruction[1] = False
+            else:
+                return False  # this shouldn't happen.
+
+    def isGeyserCompleted(self):
+        if(self.geysersUnderConstruction[0] == True and self.geysersRemainingTime[0] <= 0):
+            return True
+        elif(self.geysersUnderConstruction[1] == True and self.geysersRemainingTime[1] <= 0):
+            return True
+        return False
+
+    # this will take all timers in this object and subtract them by 1 per tick.
+    def subtractTimeRemaining(self):
+        if(self.geysersUnderConstruction[0]):
+            self.geysersRemainingTime[0] -= 1
+        if(self.geysersUnderConstruction[1]):
+            self.geysersRemainingTime[1] -= 1
+        for workers in self.workersBeingTransferredFromGasToMins:
+            workers -= 1  # subtract 1 from their timer
+        for workers in self.workersBeingTransferredFromMinsToGas:
+            workers -= 1
+        for workers in self.workersBeingTransferredToThisBase:
+            workers -= 1
+        for workers in self.currentWorkerProduction:
+            workers -= 1
+        # ZERGUNITS WILL NEED TO BE REDONE IN KEY PAIRS { "hydralisk": 12, }
+        for zergunits in self.zergUnitsProducing:
+            zergunits -= 1
