@@ -2,7 +2,7 @@ from . import base
 import os.path
 import json
 from . import settings
-
+import copy
 # The GameState represents a single game, not all possible simulations.
 # The Simulation module will create new GameStates when branching into different
 
@@ -53,35 +53,35 @@ class GameState:
     # We start from 2 p
 
     def runSimulation(self, output):
-        if(self.tick()):
-            print("TARGET:", self.currentTarget)
-            print("ORDER:", self.currentBuildOrder)
-            if(self.tickNum <= self.maxTicks):  # while we are not at the time limit
-                if(self.currentTarget == None):  # if there's not a target at this moment
-                    for action in self.possibleActions:  # branch here and try all possibilities
-                        # append these possibilities to a build order
-                        # append the current action before calling recursively - this way we should get a list of lists for each combination in the end.
-                        # output is going to be a MUTABLE list in which we put the end result of execution.
-                        GameState(self.raceType, self.maxTicks, self.tickNum, self.requiredTech, action, self.units, self.currentProductionBuildings, self.currentTechBuildings,
-                                  self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech).runSimulation(output)  # make a new object branching into this area of possibiltiies
-                else:
-                    # if we can perform our target action, let's clear our target for the next iteration. Otherwise we wait until we can do it.
-                    # we will probably need to consider a few edge cases where the current target will be impossible unless something else is done, but it should be a
-                    # pretty small portion of all possibilities.
-                    if(self.attemptAction(self.currentTarget)):
-                        self.currentBuildOrder.append(
-                            [self.currentTarget, self.tickNum])
-                        self.currentTarget = None
-                        GameState(self.raceType, self.maxTicks, self.tickNum, self.requiredTech, self.currentTarget, self.units, self.currentProductionBuildings, self.currentTechBuildings,
-                                  self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech).runSimulation(output)
-                    else:  # if the action fails, let's wait and try again.
-                        GameState(self.raceType, self.maxTicks, self.tickNum, self.requiredTech, self.currentTarget, self.units, self.currentProductionBuildings, self.currentTechBuildings,
-                                  self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech).runSimulation(output)
+        self.tick()
+        print("TARGET:", self.currentTarget)
+        print("ORDER:", self.currentBuildOrder)
+        if(self.tickNum <= self.maxTicks):  # while we are not at the time limit
+            if(self.currentTarget == None):  # if there's not a target at this moment
+                for action in self.possibleActions:  # branch here and try all possibilities
+                    # append these possibilities to a build order
+                    # append the current action before calling recursively - this way we should get a list of lists for each combination in the end.
+                    # output is going to be a MUTABLE list in which we put the end result of execution.
+                    copy.deepcopy(GameState(self.raceType, self.maxTicks, self.tickNum, self.requiredTech, action, self.units, self.currentProductionBuildings, self.currentTechBuildings,
+                                            self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech)).runSimulation(output)  # make a new object branching into this area of possibiltiies
+            else:
+                # if we can perform our target action, let's clear our target for the next iteration. Otherwise we wait until we can do it.
+                # we will probably need to consider a few edge cases where the current target will be impossible unless something else is done, but it should be a
+                # pretty small portion of all possibilities.
+                if(self.attemptAction(self.currentTarget)):
+                    self.currentBuildOrder.append(
+                        [self.currentTarget, self.tickNum])
+                    self.currentTarget = None
+                    copy.deepcopy(GameState(self.raceType, self.maxTicks, self.tickNum, self.requiredTech, self.currentTarget, self.units, self.currentProductionBuildings, self.currentTechBuildings,
+                                            self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech)).runSimulation(output)
+                else:  # if the action fails, let's wait and try again.
+                    copy.deepcopy(GameState(self.raceType, self.maxTicks, self.tickNum, self.requiredTech, self.currentTarget, self.units, self.currentProductionBuildings, self.currentTechBuildings,
+                                            self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech)).runSimulation(output)
 
-            # return the end result, and we should be able to index it nicely with [0], [1], etc
-            if(self.tickNum >= self.maxTicks):
-                output.append(self.currentBuildOrder)
-                return True
+        # return the end result, and we should be able to index it nicely with [0], [1], etc
+        if(self.tickNum >= self.maxTicks):
+            output.append(self.currentBuildOrder)
+            return True
         # progresses time by 1 unit
         # do this AFTER Collecting all necessary information for the current game tick, income, production etc
 
@@ -191,11 +191,13 @@ class GameState:
             if(self.raceType == "z"):
                 if(base.builtGeysers < 2 and self.mins >= 25):
                     if(base.buildGeyser()):
+                        self.mins -= 25
                         return True
                 return False
             else:
                 if(base.builtGeysers < 2 and self.mins >= 75):
                     if(base.buildGeyser()):
+                        self.mins -= 75
                         return True
                 return False
         return False
