@@ -17,7 +17,7 @@ class GameState:
             self.requiredTech = self.getAllRequiredTech(goalUnits) + goalUnits
         else:
             self.requiredTech = _requiredTech
-        print(self.requiredTech)
+        # print("Required Tech:", self.requiredTech)
         self.units = []  # all owned units/buildings/techs.
         self.mins = _minerals
         self.gas = _gas
@@ -32,7 +32,6 @@ class GameState:
         self.currentBuildingsInConstruction = _currentBuildingsInConstruction
         self.startingWorkers = 12
         self.workerCost = 50
-        self.currentBuildOrder = []  # in format: [["unit",tickNum],["tech",tickNum]]
         # allowed transitions between minerals/gas. will increase overhead as this rises.
         self.allowedTransitions = 6
         # how long will the simulation be allowed to go for? Each tick = 1 second ingame
@@ -40,6 +39,7 @@ class GameState:
         self.maxTicks = maxticks
         self.possibleActions = ["worker", "supply", "build", "geyser",
                                 "transferToGas", "transferToMins", "transferToBase", "chronoboost"]
+        # in format: [["unit",tickNum],["tech",tickNum]]
         self.currentBuildOrder = _currentBuildOrder
         # we are assuming that all queens will be used to inject always, and that all orbitals will always make MULEs.
         # side tip - mules can mine at the same time an SCV is, so it doesn't mess with calculations.
@@ -50,38 +50,38 @@ class GameState:
 
         # self.simulationResults = self.runSimulation()
         # print(self.getAllRequiredTech(["ultralisk", "ultralisk", "hydralisk", "zergling"]))
-
     # We start from 2 p
-    def runSimulation(self, output):
-        self.tick()
-        print("TARGET:", self.currentTarget)
-        print("ORDER:", self.currentBuildOrder)
-        if(self.tickNum <= self.maxTicks):  # while we are not at the time limit
-            if(self.currentTarget == None):  # if there's not a target at this moment
-                for action in self.possibleActions:  # branch here and try all possibilities
-                    # append these possibilities to a build order
-                    # append the current action before calling recursively - this way we should get a list of lists for each combination in the end.
-                    # output is going to be a MUTABLE list in which we put the end result of execution.
-                    GameState(self.raceType, self.maxTicks, self.tickNum, self.requiredTech, action, self.units, self.currentProductionBuildings, self.currentTechBuildings,
-                              self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech).runSimulation(output)  # make a new object branching into this area of possibiltiies
-            else:
-                # if we can perform our target action, let's clear our target for the next iteration. Otherwise we wait until we can do it.
-                # we will probably need to consider a few edge cases where the current target will be impossible unless something else is done, but it should be a
-                # pretty small portion of all possibilities.
-                if(self.attemptAction(self.currentTarget)):
-                    self.currentBuildOrder.append(
-                        [self.currentTarget, self.tickNum])
-                    self.currentTarget = None
-                    GameState(self.raceType, self.maxTicks, self.tickNum, self.requiredTech, self.currentTarget, self.units, self.currentProductionBuildings, self.currentTechBuildings,
-                              self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech).runSimulation(output)
-                else:  # if the action fails, let's wait and try again.
-                    GameState(self.raceType, self.maxTicks, self.tickNum, self.requiredTech, self.currentTarget, self.units, self.currentProductionBuildings, self.currentTechBuildings,
-                              self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech).runSimulation(output)
 
-        # return the end result, and we should be able to index it nicely with [0], [1], etc
-        if(self.tickNum >= self.maxTicks):
-            output.append(self.currentBuildOrder)
-            return True
+    def runSimulation(self, output):
+        if(self.tick()):
+            print("TARGET:", self.currentTarget)
+            print("ORDER:", self.currentBuildOrder)
+            if(self.tickNum <= self.maxTicks):  # while we are not at the time limit
+                if(self.currentTarget == None):  # if there's not a target at this moment
+                    for action in self.possibleActions:  # branch here and try all possibilities
+                        # append these possibilities to a build order
+                        # append the current action before calling recursively - this way we should get a list of lists for each combination in the end.
+                        # output is going to be a MUTABLE list in which we put the end result of execution.
+                        GameState(self.raceType, self.maxTicks, self.tickNum, self.requiredTech, action, self.units, self.currentProductionBuildings, self.currentTechBuildings,
+                                  self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech).runSimulation(output)  # make a new object branching into this area of possibiltiies
+                else:
+                    # if we can perform our target action, let's clear our target for the next iteration. Otherwise we wait until we can do it.
+                    # we will probably need to consider a few edge cases where the current target will be impossible unless something else is done, but it should be a
+                    # pretty small portion of all possibilities.
+                    if(self.attemptAction(self.currentTarget)):
+                        self.currentBuildOrder.append(
+                            [self.currentTarget, self.tickNum])
+                        self.currentTarget = None
+                        GameState(self.raceType, self.maxTicks, self.tickNum, self.requiredTech, self.currentTarget, self.units, self.currentProductionBuildings, self.currentTechBuildings,
+                                  self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech).runSimulation(output)
+                    else:  # if the action fails, let's wait and try again.
+                        GameState(self.raceType, self.maxTicks, self.tickNum, self.requiredTech, self.currentTarget, self.units, self.currentProductionBuildings, self.currentTechBuildings,
+                                  self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech).runSimulation(output)
+
+            # return the end result, and we should be able to index it nicely with [0], [1], etc
+            if(self.tickNum >= self.maxTicks):
+                output.append(self.currentBuildOrder)
+                return True
         # progresses time by 1 unit
         # do this AFTER Collecting all necessary information for the current game tick, income, production etc
 
@@ -91,12 +91,13 @@ class GameState:
         income = self.getIncomeThisTick()
         print("Income: ", income)
         print("Minerals: ", self.mins)
-        print("Gas: ", self.gas)
+        # print("Gas: ", self.gas)
         self.mins += income[0]  # mins
         self.gas += income[1]  # gas
         for base in self.bases:
             # i had to rename this because it was clashing somehow with the "tick" function in this file. Will need to look into..
             base.tickUp()
+        return True
 
     # returns a list [ minerals, gas ]
 
@@ -157,10 +158,23 @@ class GameState:
         else:
             pass
 
+    # we will have to send this unit to a production building to be made.
+    # This should only ever return true if a unit is:
+    #  - Being immediately added to a production queue
+    #  OR
+    #  - Will be added to a production queue to a building that is currently under construction
+    #  AND
+    #  - There is not currently another unit waiting in this same queue. (this should probably be accounted for already by virtue of how this is being called)
     def buildUnit(self, unit):
-        return None
+        return False
 
     def buildSupply(self):
+        if(self.raceType == "z" and self.mins >= 100):
+            for base in self.bases:
+                if(base.hasFreeProduction()):
+                    base.useLarva()
+
+                    return True
         return None
 
     def hasTechFor(self, unit):
@@ -208,7 +222,7 @@ class GameState:
     # attempts all bases to make 1 worker
     # if successful, returns true and spends money/supply appropriately.
     def makeWorker(self):
-        print("ran")
+        # print("ran")
         availableSupply = self.supply - self.usedSupply
         if(self.mins >= 50 and availableSupply >= 1):
             for base in self.bases:
