@@ -8,7 +8,7 @@ import copy
 
 
 class GameState:
-    def __init__(self, race="z", maxticks=0, currentTick=0, goalUnits=[], _currentTarget=None, currentUnits=[], _currentProductionBuildings=[], _currentTechBuildings=[], _currentBuildingsInConstruction=[], _minerals=50, _gas=0, _currentBases=[], _currentBuildOrder=[], _requiredTech=None):
+    def __init__(self, race="z", maxticks=0, currentTick=0, goalUnits=[], _currentTarget=None, currentUnits=[], _currentProductionBuildings=[], _currentTechBuildings=[], _currentBuildingsInConstruction=[], _minerals=50, _gas=0, _currentBases=[], _currentBuildOrder=[], _requiredTech=None, _allowedTransitions=0):
 
         # print(self.config["marine"])
         # this will contain base objects, which contain workers. Income is based on amt of workers at a given base (it changes based on saturation)
@@ -33,7 +33,7 @@ class GameState:
         self.startingWorkers = 12
         self.workerCost = 50
         # allowed transitions between minerals/gas. will increase overhead as this rises.
-        self.allowedTransitions = 6
+        self.allowedTransitions = _allowedTransitions
         # how long will the simulation be allowed to go for? Each tick = 1 second ingame
         self.tickNum = currentTick
         self.maxTicks = maxticks
@@ -53,6 +53,7 @@ class GameState:
     # We start from 2 p
 
     def runSimulation(self, output):
+
         self.tick()
         print("TARGET:", self.currentTarget)
         print("ORDER:", self.currentBuildOrder)
@@ -63,7 +64,7 @@ class GameState:
                     # append the current action before calling recursively - this way we should get a list of lists for each combination in the end.
                     # output is going to be a MUTABLE list in which we put the end result of execution.
                     copy.deepcopy(GameState(self.raceType, self.maxTicks, self.tickNum, self.requiredTech, action, self.units, self.currentProductionBuildings, self.currentTechBuildings,
-                                            self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech)).runSimulation(output)  # make a new object branching into this area of possibiltiies
+                                            self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech, self.allowedTransitions)).runSimulation(output)  # make a new object branching into this area of possibiltiies
             else:
                 # if we can perform our target action, let's clear our target for the next iteration. Otherwise we wait until we can do it.
                 # we will probably need to consider a few edge cases where the current target will be impossible unless something else is done, but it should be a
@@ -73,15 +74,16 @@ class GameState:
                         [self.currentTarget, self.tickNum])
                     self.currentTarget = None
                     copy.deepcopy(GameState(self.raceType, self.maxTicks, self.tickNum, self.requiredTech, self.currentTarget, self.units, self.currentProductionBuildings, self.currentTechBuildings,
-                                            self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech)).runSimulation(output)
+                                            self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech, self.allowedTransitions)).runSimulation(output)
                 else:  # if the action fails, let's wait and try again.
                     copy.deepcopy(GameState(self.raceType, self.maxTicks, self.tickNum, self.requiredTech, self.currentTarget, self.units, self.currentProductionBuildings, self.currentTechBuildings,
-                                            self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech)).runSimulation(output)
+                                            self.currentBuildingsInConstruction, self.mins, self.gas, self.bases, self.currentBuildOrder, self.requiredTech, self.allowedTransitions)).runSimulation(output)
 
         # return the end result, and we should be able to index it nicely with [0], [1], etc
         if(self.tickNum >= self.maxTicks):
             output.append(self.currentBuildOrder)
             return True
+
         # progresses time by 1 unit
         # do this AFTER Collecting all necessary information for the current game tick, income, production etc
 
@@ -208,7 +210,8 @@ class GameState:
     def transferToGas(self):
         for base in self.bases:
             # if the geysers aren't all occupied
-            if(base.builtGeysers > 0 and (base.geysers[0] < 3 or base.geysers[1] < 3)):
+            if(base.builtGeysers > 0 and (base.geysers[0] < 3 or base.geysers[1] < 3) and self.canTransition()):
+                self.allowedTransitions -= 1
                 base.transferMinsToGas()
                 return True
         return False
@@ -216,7 +219,8 @@ class GameState:
     def transferToMins(self):
         for base in self.bases:
             # if there is at least 1 worker in a geyser
-            if(base.builtGeysers > 0 and (base.geysers[0] > 0 or base.geysers[1] > 0)):
+            if(base.builtGeysers > 0 and (base.geysers[0] > 0 or base.geysers[1] > 0) and self.canTransition()):
+                self.allowedTransitions -= 1
                 base.transferGasToMins()
                 return True
         return False
