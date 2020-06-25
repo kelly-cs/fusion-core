@@ -34,3 +34,10 @@ The goal will be to approach the target unit composition as fast as possible.
 
 At every game tick, we can attempt all possible actions that accomplish the target unit composition, while not
 letting the production of workers stop until a certain amount. This will decrease the range of possibilities to test.
+
+### 3) Target Focus
+
+At every game tick, if we do not have a current target, we will branch out and attempt all possible actions.
+If we have an action to do, we try to complete it. Otherwise we wait until we're able to.
+This should get rid of a lot of the random useless stuff in the Brute Force method, while still preserving the ability to wait
+(i.e., to wait for production buildings to complete in order to produce army units instead of just making workers instead)
