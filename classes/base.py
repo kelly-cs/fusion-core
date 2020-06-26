@@ -182,6 +182,7 @@ class Base():
         else:
             return False
 
+    # run this function whenever making any non-worker unit.
     def useLarva(self):
         if(self.raceType == Race.ZERG and self.currentlarva > 0):
             self.currentlarva -= 1
@@ -199,11 +200,37 @@ class Base():
 
     # This function will move 1 worker from minerals to Gas, putting them into the wait queue to move in.
     def transferMinsToGas(self):
-        return None
+        if(self.workersOnMinerals > 0):
+            self.workersOnMinerals -= 1
+            self.workersBeingTransferredFromMinsToGas.append(
+                self.timeToTransferMinsToGas)
+            return True
+        return False
 
-    # This function will move 1 worker from Gas to minerals, from whatever geyser it gets to first. It will be put in a little queue to move.
+    # This function will move 1 worker from Gas to minerals
     def transferGasToMins(self):
-        return None
+        # always take from which geyser has 3 workers on it first - it affects gas income least.
+        if(self.geysers[0] > 2):
+            self.geysers[0] -= 1
+            self.workersBeingTransferredFromGasToMins.append(
+                self.timeToTransferMinsToGas)
+            return True
+        elif(self.geysers[1] > 2):
+            self.geysers[1] -= 1
+            self.workersBeingTransferredFromGasToMins.append(
+                self.timeToTansferMinsToGas)
+            return True
+        elif(self.geysers[0] > 0):
+            self.geysers[0] -= 1
+            self.workersBeingTransferredFromGasToMins.append(
+                self.timeToTansferMinsToGas)
+            return True
+        elif(self.geysers[1] > 0):
+            self.geysers[1] -= 1
+            self.workersBeingTransferredFromGasToMins.append(
+                self.timeToTansferMinsToGas)
+            return True
+        return False
 
     # this will immediately remove a worker from this base.
     def transferWorkerOutOfBase(self):
@@ -232,7 +259,7 @@ class Base():
         if(self.raceType == Race.ZERG and self.builtGeysers < 2 and len(self.workersBeingSentToBuildGas) < 2):
             self.workersOnMinerals -= 1  # use workers from the mineral line
             self.workersBeingSentToBuildGas.append(
-                self.timeToTransferMinsToGas)  # add a worker to a queue to build the gas
+                self.workerTravelTimeToBuild)  # add a worker to a queue to build the gas
             if(self.builtGeysers == 0):
                 # this will trigger the countdown timer each tick
                 self.geysersUnderConstruction[0] = True
@@ -263,8 +290,8 @@ class Base():
                 self.builtGeysers += 1
                 self.geysersUnderConstruction[0] = False
                 return True
-            # if this is the second geyser for this baes
-            elif(builtGeysers == 1):
+            # if this is the second geyser for this base
+            elif(self.builtGeysers == 1):
                 self.geysers[1] = 1  # add 1 worker to the second geyser.
                 self.builtGeysers += 1
                 self.geysersUnderConstruction[1] = False
@@ -281,23 +308,30 @@ class Base():
 
     # this will take all timers in this object and subtract them by 1 per tick.
     # It also will remove objects from the production queue if they are finished, and apply them to the base.
-    def subtractTimeRemaining(self):
-        if(self.geysersUnderConstruction[0]):
-            self.geysersRemainingTime[0] -= 1
-        if(self.geysersUnderConstruction[1]):
-            self.geysersRemainingTime[1] -= 1
-        if(self.isGeyserCompleted()):
-            self.geyserComplete()
-        for workers in self.workersBeingTransferredFromGasToMins:
-            workers -= 1  # subtract 1 from their timer
-        for workers in self.workersBeingTransferredFromMinsToGas:
-            workers -= 1
-        for workers in self.workersBeingTransferredToThisBase:
-            workers -= 1
-        index = 0
-        for workers in self.currentWorkerProduction:
-            if(workers <= 0):  # if the timer is over
-                workers.pop(index)  # the first element will always be the
-                workersBeingTransferredToThisBase.append(
-                    self.timeToTransferMinsToGas)  # about 5 seconds before you factor in income
-            workers -= 1
+    # def subtractTimeRemaining(self):
+    #     if(self.geysersUnderConstruction[0]):
+    #         self.geysersRemainingTime[0] -= 1
+    #     if(self.geysersUnderConstruction[1]):
+    #         self.geysersRemainingTime[1] -= 1
+    #     if(self.isGeyserCompleted()):
+    #         self.geyserComplete()
+    #     for workers in self.workersBeingTransferredFromGasToMins:
+    #         workers -= 1  # subtract 1 from their timer
+    #     for workers in self.workersBeingTransferredFromMinsToGas:
+    #         workers -= 1
+    #     for workers in self.workersBeingTransferredToThisBase:
+    #         workers -= 1
+    #     for workers in self.workersBeingSentToBuildGas:
+    #         if(workers <= 0):  # if the timer is over
+    #             workers.pop(index)  # the first element will always be the
+    #             self.workersBeingSentToBuildGas.append(
+    #                 self.workerTravelTimeToBuild)  # about 5 seconds before you get to building
+    #         workers -= 1
+    #     index = 0
+    #     for workers in self.currentWorkerProduction:
+    #         if(workers <= 0):  # if the timer is over
+    #             # the first element will always be the worker
+    #             self.currentWorkerProduction.pop(index)
+    #             self.workersBeingTransferredToThisBase.append(
+    #                 self.timeToTransferMinsToGas)  # about 5 seconds before you factor in income
+    #         workers -= 1
