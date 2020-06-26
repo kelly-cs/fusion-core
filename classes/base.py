@@ -1,6 +1,10 @@
-from . import unit
-from . import gamestate
-from . import settings
+# standard library
+
+# third party library
+
+# local
+from classes.player import Race
+from classes import settings
 
 
 class Base():
@@ -51,7 +55,7 @@ class Base():
         self.workerTravelTimeToBuild = settings.CONFIG["timeForWorkersToBuild"]
 
         # ZERG
-        if(self.raceType == "z"):
+        if self.raceType == Race.ZERG:
             self.currentlarva = 3  # start the game with 3 active.
             self.larvemax = 3  # max that can produce normally (via larvatimer)
             # max that can exist (with the help of a queen)
@@ -76,9 +80,8 @@ class Base():
             self.burrowResearchTime = settings.CONFIG["burrow"]["time"]
             self.pneumatizedCarapaceResearchTime = settings.CONFIG["pneumatizedcarapace"]["time"]
         # TERRAN
-        if(self.raceType == "t"):
-
-            self.isOrbital = false
+        if self.raceType == Race.TERRAN:
+            self.isOrbital = False
             self.isTurningIntoOrbital = 0
             self.orbitalConstructionTime = 25
             self.orbitalConstructionTimeRemaining = 0
@@ -86,10 +89,10 @@ class Base():
             self.workersCurrentlyBuilding = []
 
         # PROTOSS
-        if(self.raceType == "p"):
+        if self.raceType == Race.PROTOSS:
             self.energy = 50  # starting energy for protoss nexus
             self.chronoCost = 50  # cost for chrono boost
-            self.isChronoBoosted = false  # is this structure chrono boosted?
+            self.isChronoBoosted = False  # is this structure chrono boosted?
             self.workersCurrentlyBuilding = []
             # arbitrary - this will assume how long your probe is out of mining to build something.
         # array containing a timer on how long the worker will take to be done.
@@ -97,7 +100,7 @@ class Base():
         self.tick = 0  # amt of elapsed game time since this base was made
 
         try:
-            if(self.isUnderConstruction):
+            if self.isUnderConstruction:
                 self.constructionTimeRemaining = self.constructionTime
         except:
             print(
@@ -118,7 +121,7 @@ class Base():
         # PROTOSS
 
         # OTHER
-        if(self.raceType == "p" or (self.raceType == "t" and self.isOrbital)):
+        if(self.raceType == Race.PROTOSS or (self.raceType == Race.TERRAN and self.isOrbital)):
             if(self.energy < self.maxenergy):
                 self.energy += self.energyRegenRate
 
@@ -126,7 +129,7 @@ class Base():
 
     # returns an array [minerals, gas] for all income gained this tick. Should be ran before "tick" for accurate income.
     # first 5 ticks are never offering income.
-    def getIncomeThisTick(self):
+    def getIncomeThisTick(self, ):
         if(self.tickNum < 5):
             return [0, 0]
 
@@ -168,12 +171,12 @@ class Base():
     # Bases exclusively handle Workers - any other unit will be instead be processed in GameState.
     def makeWorker(self):
         # build as many workers as you want, if larvae exist.
-        if(self.raceType == "z" and self.currentlarva > 0):
+        if self.raceType == Race.ZERG and self.currentlarva > 0:
             self.currentlarva -= 1
             self.currentWorkerProduction.append(self.timeToBuildWorker)
             return True
         # only 1 worker can be built at a time
-        elif((self.raceType == "p" or self.raceType == "t") and self.hasFreeProduction()):
+        elif(self.raceType == Race.PROTOSS or self.raceType == Race.TERRAN) and self.hasFreeProduction():
             self.currentWorkerProduction.append(self.timeToBuildWorker)
             return True
         else:
@@ -181,7 +184,7 @@ class Base():
 
     # run this function whenever making any non-worker unit.
     def useLarva(self):
-        if(self.raceType == "z" and self.currentlarva > 0):
+        if(self.raceType == Race.ZERG and self.currentlarva > 0):
             self.currentlarva -= 1
             return True
         return False
@@ -190,8 +193,8 @@ class Base():
         return [self.workersOnMinerals, self.geysers[0], self.geysers[1]]
 
     def getProductionQueue(self):
-        if(self.raceType == "z"):
-            return[self.currentWorkerProduction]
+        if(self.raceType == Race.ZERG):
+            return[self.currentWorkerProduction, self.zergUnitsProducing]
         else:
             return[self.currentWorkerProduction]
 
@@ -242,18 +245,18 @@ class Base():
     # Z: Is there larvae + no upgrades being built?
     def hasFreeProduction(self):
         # research only matters if upgrading to a lair.
-        if(self.raceType == "z" and self.currentlarva >= 1):
+        if(self.raceType == Race.ZERG and self.currentlarva >= 1):
             return True
-        elif(self.raceType == "t" and self.iscurrentlyResearching == False and self.isTurningIntoOrbital == False and self.currentWorkerProduction == []):
+        elif(self.raceType == Race.TERRAN and self.iscurrentlyResearching == False and self.isTurningIntoOrbital == False and self.currentWorkerProduction == []):
             return True
-        elif(self.raceType == "p" and self.iscurrentlyResearching == False and self.isTurningIntoOrbital == False and self.currentWorkerProduction == []):
+        elif(self.raceType == Race.PROTOSS and self.iscurrentlyResearching == False and self.isTurningIntoOrbital == False and self.currentWorkerProduction == []):
             return True
         else:
             return False
 
     def buildGeyser(self):
         # to try and stop from building more geysers than are available
-        if(self.raceType == "z" and self.builtGeysers < 2 and len(self.workersBeingSentToBuildGas) < 2):
+        if(self.raceType == Race.ZERG and self.builtGeysers < 2 and len(self.workersBeingSentToBuildGas) < 2):
             self.workersOnMinerals -= 1  # use workers from the mineral line
             self.workersBeingSentToBuildGas.append(
                 self.workerTravelTimeToBuild)  # add a worker to a queue to build the gas
@@ -271,7 +274,7 @@ class Base():
     # that is to say, when a timer reaches 0 in self.geyserRemainingTime, run this.
     # current limitation: does not handle when 2 geysers finish at the same time. not a huge deal but might be worth fixing later.
     def geyserComplete(self):
-        if(self.raceType == "z"):
+        if(self.raceType == Race.ZERG):
             if(self.builtGeysers == 0):
                 self.builtGeysers += 1
                 self.geysersUnderConstruction[0] = False
@@ -288,7 +291,7 @@ class Base():
                 self.geysersUnderConstruction[0] = False
                 return True
             # if this is the second geyser for this base
-            elif(builtGeysers == 1):
+            elif(self.builtGeysers == 1):
                 self.geysers[1] = 1  # add 1 worker to the second geyser.
                 self.builtGeysers += 1
                 self.geysersUnderConstruction[1] = False
@@ -305,30 +308,30 @@ class Base():
 
     # this will take all timers in this object and subtract them by 1 per tick.
     # It also will remove objects from the production queue if they are finished, and apply them to the base.
-    def subtractTimeRemaining(self):
-        if(self.geysersUnderConstruction[0]):
-            self.geysersRemainingTime[0] -= 1
-        if(self.geysersUnderConstruction[1]):
-            self.geysersRemainingTime[1] -= 1
-        if(self.isGeyserCompleted()):
-            self.geyserComplete()
-        for workers in self.workersBeingTransferredFromGasToMins:
-            workers -= 1  # subtract 1 from their timer
-        for workers in self.workersBeingTransferredFromMinsToGas:
-            workers -= 1
-        for workers in self.workersBeingTransferredToThisBase:
-            workers -= 1
-        for workers in self.workersBeingSentToBuildGas:
-            if(workers <= 0):  # if the timer is over
-                workers.pop(index)  # the first element will always be the
-                workersBeingSentToBuildGas.append(
-                    self.workerTravelTimeToBuild)  # about 5 seconds before you get to building
-            workers -= 1
-        index = 0
-        for workers in self.currentWorkerProduction:
-            if(workers <= 0):  # if the timer is over
-                # the first element will always be the worker
-                self.currentWorkerProduction.pop(index)
-                workersBeingTransferredToThisBase.append(
-                    self.timeToTransferMinsToGas)  # about 5 seconds before you factor in income
-            workers -= 1
+    # def subtractTimeRemaining(self):
+    #     if(self.geysersUnderConstruction[0]):
+    #         self.geysersRemainingTime[0] -= 1
+    #     if(self.geysersUnderConstruction[1]):
+    #         self.geysersRemainingTime[1] -= 1
+    #     if(self.isGeyserCompleted()):
+    #         self.geyserComplete()
+    #     for workers in self.workersBeingTransferredFromGasToMins:
+    #         workers -= 1  # subtract 1 from their timer
+    #     for workers in self.workersBeingTransferredFromMinsToGas:
+    #         workers -= 1
+    #     for workers in self.workersBeingTransferredToThisBase:
+    #         workers -= 1
+    #     for workers in self.workersBeingSentToBuildGas:
+    #         if(workers <= 0):  # if the timer is over
+    #             workers.pop(index)  # the first element will always be the
+    #             self.workersBeingSentToBuildGas.append(
+    #                 self.workerTravelTimeToBuild)  # about 5 seconds before you get to building
+    #         workers -= 1
+    #     index = 0
+    #     for workers in self.currentWorkerProduction:
+    #         if(workers <= 0):  # if the timer is over
+    #             # the first element will always be the worker
+    #             self.currentWorkerProduction.pop(index)
+    #             self.workersBeingTransferredToThisBase.append(
+    #                 self.timeToTransferMinsToGas)  # about 5 seconds before you factor in income
+    #         workers -= 1
