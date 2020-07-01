@@ -21,6 +21,7 @@ from classes.base import Base
 #  SECTION: Helpers                                              #
 # ============================================================== #
 
+
 def run_simulation(output, gamestate):
     if not gamestate.remaining_ticks:
         output.append(gamestate.player.build_order)
@@ -37,6 +38,7 @@ def run_simulation(output, gamestate):
             gamestate_copy.player.modify_income_this_tick()
             run_simulation(output, gamestate_copy)
 
+    # required to create the tree, otherwise only 1 object is made and the data is mangled
     gamestate_copy = deepcopy(gamestate)
     gamestate_copy.player.build_order.append((None,
                                               gamestate_copy.remaining_ticks,
@@ -60,20 +62,20 @@ if __name__ == "__main__":
         "zergling"
     ]
 
-    settings.init()  # runs settings
+    settings.init()  # runs settings, makes it available across all files (init only needs to be ran here)
     output = []
-    player =  Player(Race.ZERG,
-                     minerals=50,
-                     gas=0,
-                     goal_units=goal_units ,
-                     current_units = [],
-                     buildings = [],
-                     bases = [Base(12, Race.ZERG, "normal", "normal", 2, False)],
-                     build_order = [],
-                     supply = 3,
-                     required_tech=get_all_required_tech(goal_units) + goal_units)
+    player = Player(Race.ZERG,
+                    minerals=50,
+                    gas=0,
+                    goal_units=goal_units,
+                    current_units=[],
+                    buildings=[],
+                    bases=[Base(12, Race.ZERG, "normal", "normal", 2, False)],
+                    build_order=[],
+                    supply=3,
+                    required_tech=get_all_required_tech(goal_units) + goal_units)
     gamestate = GameState(remaining_ticks=10, player=player)
     simulation = run_simulation(output, gamestate)  # store results in output
-    print(simulation)
+    # print(simulation)
     print(output[0])
     print(len(output))

@@ -26,7 +26,7 @@ class Base():
         self.constructionTime = 71  # amt of time to build a base
         self.constructionTimeRemaining = 0  # amt of time remaining to construct this base
         self.timeToBuildWorker = settings.CONFIG["worker"]["time"]  # default
-        self.tickNum = 0
+        self.tickNum = 0  # amt of elapsed game time since this base was made
         self.iscurrentlyResearching = False  # true/false
         self.currentResearch = "None"  # name of current research, from CONFIG/
         # time remaining of current research, reduce by 1 per tick
@@ -97,7 +97,6 @@ class Base():
             # arbitrary - this will assume how long your probe is out of mining to build something.
         # array containing a timer on how long the worker will take to be done.
         self.currentWorkerProduction = []
-        self.tick = 0  # amt of elapsed game time since this base was made
 
         try:
             if self.isUnderConstruction:
@@ -129,7 +128,7 @@ class Base():
 
     # returns an array [minerals, gas] for all income gained this tick. Should be ran before "tick" for accurate income.
     # first 5 ticks are never offering income.
-    def getIncomeThisTick(self, ):
+    def getIncomeThisTick(self):
         if(self.tickNum < 5):
             return [0, 0]
 
@@ -232,12 +231,18 @@ class Base():
             return True
         return False
 
-    # this will immediately remove a worker from this base.
-    def transferWorkerOutOfBase(self):
+    # this will immediately remove a worker from this base, from the mineral line by default.
+    def transferWorkerOutOfBase(self, newbase):
+        if(self.workersOnMinerals > 0):
+            self.workersOnMinerals -= 1
+            newbase.transferWorkerIntoBase()
+
         return None
 
     # this will add a worker to the "transferring to base" queue, which is about 10-15 seconds, in which case it will be sent to the mineral line.
     def transferWorkerIntoBase(self):
+        self.workersBeingTransferredToThisBase.append(
+            self.timetoTransferBetweenBases)
         return None
 
     # Can you build a worker right now?
@@ -308,30 +313,34 @@ class Base():
 
     # this will take all timers in this object and subtract them by 1 per tick.
     # It also will remove objects from the production queue if they are finished, and apply them to the base.
-    # def subtractTimeRemaining(self):
-    #     if(self.geysersUnderConstruction[0]):
-    #         self.geysersRemainingTime[0] -= 1
-    #     if(self.geysersUnderConstruction[1]):
-    #         self.geysersRemainingTime[1] -= 1
-    #     if(self.isGeyserCompleted()):
-    #         self.geyserComplete()
-    #     for workers in self.workersBeingTransferredFromGasToMins:
-    #         workers -= 1  # subtract 1 from their timer
-    #     for workers in self.workersBeingTransferredFromMinsToGas:
-    #         workers -= 1
-    #     for workers in self.workersBeingTransferredToThisBase:
-    #         workers -= 1
-    #     for workers in self.workersBeingSentToBuildGas:
-    #         if(workers <= 0):  # if the timer is over
-    #             workers.pop(index)  # the first element will always be the
-    #             self.workersBeingSentToBuildGas.append(
-    #                 self.workerTravelTimeToBuild)  # about 5 seconds before you get to building
-    #         workers -= 1
-    #     index = 0
-    #     for workers in self.currentWorkerProduction:
-    #         if(workers <= 0):  # if the timer is over
-    #             # the first element will always be the worker
-    #             self.currentWorkerProduction.pop(index)
-    #             self.workersBeingTransferredToThisBase.append(
-    #                 self.timeToTransferMinsToGas)  # about 5 seconds before you factor in income
-    #         workers -= 1
+    def subtractTimeRemaining(self):
+        if(self.geysersUnderConstruction[0]):
+            self.geysersRemainingTime[0] -= 1
+        if(self.geysersUnderConstruction[1]):
+            self.geysersRemainingTime[1] -= 1
+        if(self.isGeyserCompleted()):
+            self.geyserComplete()
+        for workers in self.workersBeingTransferredFromGasToMins:
+            workers -= 1  # subtract 1 from their timer
+        for workers in self.workersBeingTransferredFromMinsToGas:
+            workers -= 1
+        for workers in self.workersBeingTransferredToThisBase:
+            workers -= 1
+
+        index = 0
+        for workers in self.workersBeingSentToBuildGas:
+            if(workers <= 0):  # if the timer is over
+                self.currentWorkerProduction.pop(index)
+                self.workersBeingSentToBuildGas.append(
+                    self.workerTravelTimeToBuild)  # about 5 seconds before you get to building
+            workers -= 1
+            index += 1
+
+        index = 0
+        for workers in self.currentWorkerProduction:
+            if(workers <= 0):  # if the timer is over
+                self.currentWorkerProduction.pop(index)
+                self.workersBeingTransferredToThisBase.append(
+                    self.timeToTransferMinsToGas)  # about 5 seconds before you factor in income
+            workers -= 1
+            index += 1
