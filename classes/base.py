@@ -401,3 +401,34 @@ class Base():
             else:
                 workers -= 1
                 index += 1
+
+    def debug(self):
+        return(
+            self.mineraltype,
+            self.gasType,
+            self.amtGeysers,
+            self.workersOnMinerals,
+            self.builtGeysers,
+            self.geysers,
+            self.geysersUnderConstruction,
+            self.geysersRemainingTime,
+            self.isUnderConstruction,
+            self.constructionTime,
+            self.constructionTimeRemaining,
+            self.timeToBuildWorker,
+            self.tickNum,
+            self.iscurrentlyResearching,
+            self.currentResearch,
+            self.currentResearchTime,
+            self.currentResarchTimeRemaining,
+            self.raceType,
+            self.energyRegenRate,
+            self.energy,
+            self.maxenergy,
+            self.timetoTransferBetweenBases,
+            self.workersBeingTransferredToThisBase,
+            self.timeToTransferMinsToGas,
+            self.workersBeingTransferredFromMinsToGas,
+            self.workersBeingTransferredFromGasToMins,
+            self.workersBeingSentToBuildGas
+        )

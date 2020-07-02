@@ -23,7 +23,7 @@ class Race(Enum):
 
 
 class Player:
-    def __init__(self, race , minerals, gas, goal_units, current_units, buildings, bases, build_order, supply, required_tech):
+    def __init__(self, race, minerals, gas, goal_units, current_units, buildings, bases, build_order, supply, required_tech):
         self.race = race
         self.minerals = minerals
         self.gas = gas
@@ -36,7 +36,6 @@ class Player:
         self.required_tech = required_tech
         self.allowedTransitions = 6
 
-
     # def remainingTechToBuild(self):
     #     tech = self.required_tech
     #     for requirements in tech:
@@ -44,12 +43,11 @@ class Player:
     #             tech.remove(requirements)
     #     return tech
 
-
     def modify_income_this_tick(self):
         income_this_tick = [0, 0]
 
         for base in self.bases:  # check each base for income
-            base.tickNum += 1
+            base.tickUp()
             # [ minerals, gas ]
             self.minerals += base.getIncomeThisTick()[0]
             # we'll pare this down later because this is stupid
@@ -92,7 +90,7 @@ class Player:
                 return False
         return False
 
-    def convert_to_gas(self):
+    def transfer_to_gas(self):
         for base in self.bases:
             # if the geysers aren't all occupied
             if base.builtGeysers > 0 and (base.geysers[0] < 3 or base.geysers[1] < 3):
@@ -100,14 +98,13 @@ class Player:
                 return True
         return False
 
-    def convert_to_minerals(self):
+    def transfer_to_minerals(self):
         for base in self.bases:
             # if there is at least 1 worker in a geyser
             if base.builtGeysers > 0 and (base.geysers[0] > 0 or base.geysers[1] > 0):
                 base.transferGasToMins()
                 return True
         return False
-
 
     def build_supply(self):
         if self.race == Race.ZERG and self.minerals >= 100:
@@ -118,14 +115,26 @@ class Player:
                     return True
         return None
 
-
     def build_unit(self):
         return False
 
-
-    def convert_to_base(self):
+    def transfer_to_base(self):
         return False
-
 
     def chronoboost(self):
         return False
+
+    def debug(self):
+        base_debug = self.bases[0].debug()
+        return (self.race,
+                self.minerals,
+                self.gas,
+                self.goal_units,
+                self.current_units,
+                self.buildings,
+                base_debug,
+                self.build_order,
+                self.supply,
+                self.required_tech,
+                self.allowedTransitions
+                )

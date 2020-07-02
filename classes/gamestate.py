@@ -17,12 +17,13 @@ from classes import settings
 #  SECTION: Global Definitions                                   #
 # ============================================================== #
 
-STARTING_WORKERS  = 12
+STARTING_WORKERS = 12
 WORKER_COST = 50
 
 # ============================================================== #
 #  SECTION: Helpers Static                                       #
 # ============================================================== #
+
 
 def get_all_required_tech(composition):
     requiredtech = []  # return a list of all required items, using the config file for help
@@ -51,6 +52,7 @@ def get_all_required_tech(composition):
 #  SECTION: Classes                                              #
 # ============================================================== #
 
+
 class GameState:
 
     def __init__(self, remaining_ticks, player):
@@ -63,9 +65,9 @@ class GameState:
                                  self.player.build_supply,
                                  self.player.build_unit,
                                  self.player.build_geyser,
-                                 self.player.convert_to_gas,
-                                 self.player.convert_to_minerals,
-                                 self.player.convert_to_base,
+                                 self.player.transfer_to_gas,
+                                 self.player.transfer_to_minerals,
+                                 self.player.transfer_to_base,
                                  self.player.chronoboost]
 
 

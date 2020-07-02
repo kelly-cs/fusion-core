@@ -23,6 +23,7 @@ from classes.base import Base
 
 
 def run_simulation(output, gamestate):
+    print(gamestate.player.debug())
     if not gamestate.remaining_ticks:
         output.append(gamestate.player.build_order)
         return output
@@ -70,12 +71,13 @@ if __name__ == "__main__":
                     goal_units=goal_units,
                     current_units=[],
                     buildings=[],
-                    bases=[Base(12, Race.ZERG, "normal", "normal", 2, False)],
+                    bases=[Base(12, Race.ZERG, "normal",
+                                "normal", 2, False)],
                     build_order=[],
                     supply=3,
                     required_tech=get_all_required_tech(goal_units) + goal_units)
     gamestate = GameState(remaining_ticks=10, player=player)
     simulation = run_simulation(output, gamestate)  # store results in output
     # print(simulation)
-    print(output[0])
+    print(output[4])
     print(len(output))
