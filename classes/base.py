@@ -333,7 +333,7 @@ class Base():
                 self.geysers[i] += 1
                 return True
 
-        return False  # if all geyser are occupied.
+        return False  # if all geysers are occupied.
 
 # this will take all timers in this object and subtract them by 1 per tick.
 # It also will remove objects from the production queue if they are finished, and apply them to the base.

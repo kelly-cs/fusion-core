@@ -7,7 +7,7 @@
 # standard library
 from copy import deepcopy
 from builtins import *
-
+import json
 # third party library
 
 # local
@@ -23,7 +23,7 @@ from classes.base import Base
 
 
 def run_simulation(output, gamestate):
-    print(gamestate.player.debug())
+    # settings.LOG.info(gamestate.player.debug())
     if not gamestate.remaining_ticks:
         output.append(gamestate.player.build_order)
         return output
@@ -81,3 +81,4 @@ if __name__ == "__main__":
     # print(simulation)
     print(output[4])
     print(len(output))
+    settings.LOG.info(json.dumps(output))
