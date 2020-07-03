@@ -262,7 +262,7 @@ class Base():
 
     def buildGeyser(self):
         # to try and stop from building more geysers than are available
-        if(self.raceType == Race.ZERG and self.builtGeysers < 2 and len(self.workersBeingSentToBuildGas) < 2):
+        if(self.raceType == Race.ZERG and self.builtGeysers < 2 and len(self.workersBeingSentToBuildGas) < 2 and (not self.geysersUnderConstruction[0] or not self.geysersUnderConstruction[1])):
             if(self.builtGeysers == 0):
                 # this will trigger the countdown timer each tick
                 self.geysersUnderConstruction[0] = True
