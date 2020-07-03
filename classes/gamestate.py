@@ -55,14 +55,11 @@ def get_all_required_tech(composition):
 
 class GameState:
 
-    def __init__(self, remaining_ticks, player, target_action):
+    def __init__(self, remaining_ticks, player):
 
         self.remaining_ticks = remaining_ticks
 
         self.player = player
-
-        self.target_action = target_action
-
         # these are direct references to the functions in the Player class.
         self.possible_actions = [self.player.make_worker,
                                  self.player.build_supply,
@@ -82,7 +79,6 @@ class GameState:
     def debug_gamestate(self):
         return {
             "remaining_ticks": self.remaining_ticks,
-            "target_action": self.target_action,
         }
 
     # returns a dictionary containing all player data - except build order, because we output this information to that
@@ -121,6 +117,7 @@ class GameState:
             index += 1
 
         return base_dictionary
+
 # ============================================================== #
 #  SECTION: Main                                                 #
 # ============================================================== #

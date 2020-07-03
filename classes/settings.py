@@ -19,7 +19,7 @@ def init():
     LOG.setLevel(level=logging.DEBUG)
     # file handler which logs even debug messages
     fh = logging.FileHandler('debug.log')  # file output
-    fh.setLevel(logging.DEBUG)
+    fh.setLevel(logging.INFO)
     # console handler with a higher log level
     ch = logging.StreamHandler()  # the console
     ch.setLevel(logging.ERROR)

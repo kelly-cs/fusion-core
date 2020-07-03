@@ -23,58 +23,85 @@ from classes.base import Base
 
 
 def run_simulation(output, gamestate):
-
     if not gamestate.remaining_ticks:
         output.append(gamestate.player.build_order)
         return output
+    for action in gamestate.possible_actions:
+        # this will reach into GameState and run the function directly in its Player class.
+        gamestate_copy = deepcopy(gamestate)
+        action_name = str(action.__name__)
+        action_function = getattr(gamestate_copy.player, action_name)
+        # this has to be a copy or we don't branch correctly.
+        if action_function():
+            # print(action.__name__)
+            settings.LOG.debug(action_name)
+            if settings.LOG.level == settings.logging.DEBUG:
+                gamestate_debug = gamestate_copy.debug_gamestate()
+                player_debug = gamestate_copy.debug_player()
+                bases_debug = gamestate_copy.debug_bases()
+                # settings.LOG.debug(action.__name__)
+                gamestate_copy.player.build_order.append({"completed_action": action.__name__, "gamestate": gamestate_debug, "player": player_debug, "bases": bases_debug}
+                                                         )
+            else:  # if NOT in debug mode, we get only practical information
+                gamestate_copy.player.build_order.append(
+                    {"completed_action": action.__name__, "gamestate": gamestate_debug})
+
+            # regardless of logging level, we recurse normally.
+            gamestate_copy.remaining_ticks -= 1
+            gamestate_copy.player.tickUp()
+            run_simulation(output, gamestate_copy)
 
     gamestate_copy = deepcopy(gamestate)
+    # print(gamestate_copy.player.build_order)
+    if settings.LOG.level == settings.logging.DEBUG:
+        gamestate_debug = gamestate_copy.debug_gamestate()
+        player_debug = gamestate_copy.debug_player()
+        bases_debug = gamestate_copy.debug_bases()
+        gamestate_copy.player.build_order.append({"completed_action": "wait", "gamestate": gamestate_debug, "player": player_debug, "bases": bases_debug}
+                                                 )
+    else:  # if NOT in debug mode, we get only practical information
+        gamestate_copy.player.build_order.append(
+            {"completed_action": "wait", "gamestate": gamestate_debug})
 
-    # Only try all possibilities if there is not target yet.
-    if gamestate.target_action == None:
-        for action in gamestate.possible_actions:
-            if action():  # this will reach into GameState and run the function directly in its Player class.
+    gamestate_copy.remaining_ticks -= 1
+    gamestate_copy.player.tickUp()
+    run_simulation(output, gamestate_copy)
+    """
+        else:
+        if gamestate.target():
+            gamestate_copy = deepcopy(gamestate)
+            if settings.LOG.level == settings.logging.DEBUG:
+                gamestate_debug = dictgamestate_copy.debug_gamestate()
+                player_debug = gamestate_copy.debug_player()
+                bases_debug = gamestate_copy.debug_bases()
+                gamestate_copy.player.build_order.append(
+                    {"completed_action": gamestate.target.__name__, "gamestate": gamestate_debug, "player": player_debug, "bases": bases_debug})
 
-                if settings.LOG.level == settings.logging.DEBUG:
-                    gamestate_debug = gamestate_copy.debug_gamestate()
-                    player_debug = gamestate_copy.debug_player()
-                    bases_debug = gamestate_copy.debug_bases()
+            else:  # if NOT in debug mode, we get only practical information
+                gamestate_copy.player.build_order.append(
+                    {"completed_action": action.__name__, "gamestate": gamestate_debug})
 
-                    gamestate_copy.player.build_order.append({"completed_action": action.__name__, "gamestate": gamestate_debug, "player": player_debug, "bases": bases_debug}
-                                                             )
-                else:  # if NOT in debug mode, we get only practical information
-                    gamestate_copy.player.build_order.append({"completed_action": action.__name__, "gamestate": gamestate_debug}
-                                                             )
-                # regardless of logging level, we recurse normally.
-                gamestate_copy.remaining_ticks -= 1
-                gamestate_copy.player.tickUp()
-                gamestate_copy.target_action = None
-                # Putting None here signifies that we can try a new action the next tick.
-                run_simulation(output, gamestate_copy)
-
-            else:  # if the action fails, set it as a target and recurse there.
-                gamestate_copy.remaining_ticks -= 1
-                gamestate_copy.player.tickUp()
-                gamestate_copy.target_action = action
-                run_simulation(output, gamestate_copy)
-
-    else:  # if we have a target action to do
-        if gamestate.target_action():  # if the action is successful
-            gamestate_copy.player.build_order.append((target_action.__name__,
-                                                      gamestate_copy.remaining_ticks,
-                                                      gamestate_copy.player.minerals,
-                                                      gamestate_copy.player.gas,
-                                                      gamestate_copy.player.supply))
+            # regardless of logging level, we recurse normally.
             gamestate_copy.remaining_ticks -= 1
             gamestate_copy.player.tickUp()
-            gamestate_copy.target_action = None
-            # branch out at next tick
+            gamestate_copy.target = None
             run_simulation(output, gamestate_copy)
-        else:  # if it still fails, keep trying.
+
+        else:  # retain target and only try this until successful.
+            gamestate_copy = deepcopy(gamestate)
+            if settings.LOG.level == settings.logging.DEBUG:
+                gamestate_debug = gamestate_copy.debug_gamestate()
+                player_debug = gamestate_copy.debug_player()
+                bases_debug = gamestate_copy.debug_bases()
+                gamestate_copy.player.build_order.append({"target": gamestate.target.__name__, "gamestate": gamestate_debug, "player": player_debug, "bases": bases_debug}
+                                                         )
+            else:  # if NOT in debug mode, we get only practical information
+                gamestate_copy.player.build_order.append({"target": gamestate.target.__name__, "gamestate": gamestate_debug}
+                                                         )
+            gamestate_copy = deepcopy(gamestate)
             gamestate_copy.remaining_ticks -= 1
             gamestate_copy.player.tickUp()
-            # branch out at next tick
-            run_simulation(output, gamestate_copy)
+            run_simulation(output, gamestate_copy) """
 
 
 # ============================================================== #
@@ -101,10 +128,11 @@ if __name__ == "__main__":
                     build_order=[],
                     supply=3,
                     required_tech=get_all_required_tech(goal_units) + goal_units)
-    gamestate = GameState(remaining_ticks=10,
-                          player=player, target_action=None)
+    gamestate = GameState(remaining_ticks=100,
+                          player=player)
     # store results in output
     simulation = run_simulation(output, gamestate)
     # print(simulation)
-    print(len(output))
+    # print(output)
+    # print(len(output))
     settings.LOG.info(json.dumps(output))

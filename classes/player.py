@@ -9,6 +9,7 @@ from enum import Enum
 
 # local
 from classes.gamestate import WORKER_COST
+from classes import settings
 
 
 class Race(Enum):
@@ -52,13 +53,15 @@ class Player:
             self.minerals += base.getIncomeThisTick()[0]
             # we'll pare this down later because this is stupid
             self.gas += base.getIncomeThisTick()[1]
-
+        #settings.LOG.debug("ticking up player")
         return income_this_tick  # as a list [ mins, gas ]
 
     def canTransition(self):
         if self.allowedTransitions > 0:
+            settings.LOG.debug("transition IS allowed")
             return True
         else:
+            settings.LOG.debug("transition not allowed")
             return False
 
     #######################################
@@ -71,21 +74,25 @@ class Player:
                 if base.makeWorker():
                     self.supply -= 1
                     self.minerals -= WORKER_COST
+                    settings.LOG.debug("making a worker")
                     return True
         return False
 
     def build_geyser(self):
         for base in self.bases:  # check all bases
             if self.race == Race.ZERG:
-                if base.builtGeysers < 2 and self.minerals >= 25:
+                if base.builtGeysers < len(base.geysers) and self.minerals >= 25:
                     if base.buildGeyser():
                         self.minerals -= 25
+                        self.supply += 1
+                        settings.LOG.debug("building zerg extractor")
                         return True
                 return False
             else:
-                if base.builtGeysers < 2 and self.minerals >= 75:
+                if base.builtGeysers < len(base.geysers) and self.minerals >= 75:
                     if base.buildGeyser():
                         self.minerals -= 75
+                        settings.LOG.debug("building terran/protoss geyser")
                         return True
                 return False
         return False
@@ -94,16 +101,16 @@ class Player:
         for base in self.bases:
             # if the geysers aren't all occupied
             if base.builtGeysers > 0 and (base.geysers[0] < 3 or base.geysers[1] < 3):
-                base.transferMinsToGas()
-                return True
+                settings.LOG.debug("transfer to gas in progress...")
+                return base.transferMinsToGas()
         return False
 
     def transfer_to_minerals(self):
         for base in self.bases:
             # if there is at least 1 worker in a geyser
             if base.builtGeysers > 0 and (base.geysers[0] > 0 or base.geysers[1] > 0):
-                base.transferGasToMins()
-                return True
+                settings.LOG.debug("transfer to minerals in progress...")
+                return base.transferGasToMins()
         return False
 
     def build_supply(self):
@@ -111,11 +118,13 @@ class Player:
             for base in self.bases:
                 if base.hasFreeProduction():
                     base.useLarva()
-
+                    settings.LOG.debug("building zerg supply")
                     return True
-        return None
+        settings.LOG.debug("building supply failed")
+        return False
 
     def build_unit(self):
+        settings.LOG.debug("building unit failed")
         return False
 
     def transfer_to_base(self):

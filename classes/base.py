@@ -125,6 +125,7 @@ class Base():
                 self.energy += self.energyRegenRate
 
         self.tickNum += 1
+        return True
 
     # returns an array [minerals, gas] for all income gained this tick. Should be ran before "tick" for accurate income.
     # first 5 ticks are never offering income.
