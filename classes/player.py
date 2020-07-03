@@ -43,7 +43,7 @@ class Player:
     #             tech.remove(requirements)
     #     return tech
 
-    def modify_income_this_tick(self):
+    def tickUp(self):
         income_this_tick = [0, 0]
 
         for base in self.bases:  # check each base for income

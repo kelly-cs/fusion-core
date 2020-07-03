@@ -23,38 +23,63 @@ from classes.base import Base
 
 
 def run_simulation(output, gamestate):
-    # settings.LOG.info(gamestate.player.debug())
+
     if not gamestate.remaining_ticks:
         output.append(gamestate.player.build_order)
         return output
-    for action in gamestate.possible_actions:
-        if action():
-            gamestate_copy = deepcopy(gamestate)
-            gamestate_copy.player.build_order.append((action.__name__,
+
+    gamestate_copy = deepcopy(gamestate)
+
+    # Only try all possibilities if there is not target yet.
+    if gamestate.target_action == None:
+        for action in gamestate.possible_actions:
+            if action():  # this will reach into GameState and run the function directly in its Player class.
+
+                if settings.LOG.level == settings.logging.DEBUG:
+                    gamestate_debug = gamestate_copy.debug_gamestate()
+                    player_debug = gamestate_copy.debug_player()
+                    bases_debug = gamestate_copy.debug_bases()
+
+                    gamestate_copy.player.build_order.append({"completed_action": action.__name__, "gamestate": gamestate_debug, "player": player_debug, "bases": bases_debug}
+                                                             )
+                else:  # if NOT in debug mode, we get only practical information
+                    gamestate_copy.player.build_order.append({"completed_action": action.__name__, "gamestate": gamestate_debug}
+                                                             )
+                # regardless of logging level, we recurse normally.
+                gamestate_copy.remaining_ticks -= 1
+                gamestate_copy.player.tickUp()
+                gamestate_copy.target_action = None
+                # Putting None here signifies that we can try a new action the next tick.
+                run_simulation(output, gamestate_copy)
+
+            else:  # if the action fails, set it as a target and recurse there.
+                gamestate_copy.remaining_ticks -= 1
+                gamestate_copy.player.tickUp()
+                gamestate_copy.target_action = action
+                run_simulation(output, gamestate_copy)
+
+    else:  # if we have a target action to do
+        if gamestate.target_action():  # if the action is successful
+            gamestate_copy.player.build_order.append((target_action.__name__,
                                                       gamestate_copy.remaining_ticks,
                                                       gamestate_copy.player.minerals,
                                                       gamestate_copy.player.gas,
                                                       gamestate_copy.player.supply))
             gamestate_copy.remaining_ticks -= 1
-            gamestate_copy.player.modify_income_this_tick()
+            gamestate_copy.player.tickUp()
+            gamestate_copy.target_action = None
+            # branch out at next tick
             run_simulation(output, gamestate_copy)
-
-    # required to create the tree, otherwise only 1 object is made and the data is mangled
-    gamestate_copy = deepcopy(gamestate)
-    gamestate_copy.player.build_order.append((None,
-                                              gamestate_copy.remaining_ticks,
-                                              gamestate_copy.player.minerals,
-                                              gamestate_copy.player.gas,
-                                              gamestate_copy.player.supply))
-    gamestate_copy.remaining_ticks -= 1
-    gamestate_copy.player.modify_income_this_tick()
-    return run_simulation(output, gamestate_copy)
+        else:  # if it still fails, keep trying.
+            gamestate_copy.remaining_ticks -= 1
+            gamestate_copy.player.tickUp()
+            # branch out at next tick
+            run_simulation(output, gamestate_copy)
 
 
 # ============================================================== #
 #  SECTION: Main                                                 #
 # ============================================================== #
-
 if __name__ == "__main__":
     goal_units = [
         "zergling",
@@ -76,9 +101,10 @@ if __name__ == "__main__":
                     build_order=[],
                     supply=3,
                     required_tech=get_all_required_tech(goal_units) + goal_units)
-    gamestate = GameState(remaining_ticks=10, player=player)
-    simulation = run_simulation(output, gamestate)  # store results in output
+    gamestate = GameState(remaining_ticks=10,
+                          player=player, target_action=None)
+    # store results in output
+    simulation = run_simulation(output, gamestate)
     # print(simulation)
-    print(output[4])
     print(len(output))
     settings.LOG.info(json.dumps(output))
