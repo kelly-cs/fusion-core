@@ -17,12 +17,13 @@ from classes import settings
 #  SECTION: Global Definitions                                   #
 # ============================================================== #
 
-STARTING_WORKERS  = 12
+STARTING_WORKERS = 12
 WORKER_COST = 50
 
 # ============================================================== #
 #  SECTION: Helpers Static                                       #
 # ============================================================== #
+
 
 def get_all_required_tech(composition):
     requiredtech = []  # return a list of all required items, using the config file for help
@@ -51,6 +52,7 @@ def get_all_required_tech(composition):
 #  SECTION: Classes                                              #
 # ============================================================== #
 
+
 class GameState:
 
     def __init__(self, remaining_ticks, player):
@@ -58,20 +60,63 @@ class GameState:
         self.remaining_ticks = remaining_ticks
 
         self.player = player
-
+        # these are direct references to the functions in the Player class.
         self.possible_actions = [self.player.make_worker,
                                  self.player.build_supply,
                                  self.player.build_unit,
                                  self.player.build_geyser,
-                                 self.player.convert_to_gas,
-                                 self.player.convert_to_minerals,
-                                 self.player.convert_to_base,
+                                 self.player.transfer_to_gas,
+                                 self.player.transfer_to_minerals,
+                                 self.player.transfer_to_base,
                                  self.player.chronoboost]
 
 
 # ============================================================== #
 #  SECTION: Helpers Static                                       #
 # ============================================================== #
+    # returns a dictionary containing all current gamestate data
+
+    def debug_gamestate(self):
+        return {
+            "remaining_ticks": self.remaining_ticks,
+        }
+
+    # returns a dictionary containing all player data - except build order, because we output this information to that
+    def debug_player(self):
+        return{
+            "race": str(self.player.race),
+            "minerals": self.player.minerals,
+            "gas": self.player.gas,
+            "goal_units": self.player.goal_units,
+            "current_units": self.player.current_units,
+            "buildings": self.player.buildings,
+            "supply": self.player.supply,
+            "required_tech": self.player.required_tech,
+            "allowed_transitions": self.player.allowedTransitions
+        }
+
+    # returns a dictionary containing all useful data at the current tick for the player's bases
+    def debug_bases(self):
+        base_dictionary = {}
+        index = 0
+        for base in self.player.bases:
+            base_dictionary["base" + str(index)] = {
+                "geysersRemainingTime": base.geysersRemainingTime,
+                "geysersUnderConstruction": base.geysersUnderConstruction,
+                "workersOnMinerals": base.workersOnMinerals,
+                "workersBeingSentToBuildGas": base.workersBeingSentToBuildGas,
+                "workersBeingTransferredFromGasToMins": base.workersBeingTransferredFromGasToMins,
+                "workersBeingTransferredFromMinsToGas": base.workersBeingTransferredFromMinsToGas,
+                "workersBeingTransferredToThisBase": base.workersBeingTransferredToThisBase,
+                "isCurrentlyResearching": base.iscurrentlyResearching,
+                "remainingResearchTime": base.currentResarchTimeRemaining,
+                "isHatchery": base.isHatchery,
+                "isLair": base.isLair,
+                "isHive": base.isHive
+            }
+            index += 1
+
+        return base_dictionary
 
 # ============================================================== #
 #  SECTION: Main                                                 #
