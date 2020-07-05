@@ -5,11 +5,17 @@ import os.path
 # https://stackoverflow.com/questions/13034496/using-global-variables-between-files
 global CONFIG
 global LOG
+global SHORTEST_ORDER
 
 
 def init():
     global CONFIG
     global LOG
+
+    # This will be a number to represent the fastest build order so far, represented by the remaining tick value. Higher is better.
+    global SHORTEST_COMPLETED_BUILD_ORDER
+    SHORTEST_COMPLETED_BUILD_ORDER = None
+
     CONFIG = json.load(
         open(os.path.dirname(__file__) + '/../config/units.ini'))
 

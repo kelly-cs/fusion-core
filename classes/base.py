@@ -97,13 +97,8 @@ class Base():
             # arbitrary - this will assume how long your probe is out of mining to build something.
         # array containing a timer on how long the worker will take to be done.
         self.currentWorkerProduction = []
-
-        try:
-            if self.isUnderConstruction:
-                self.constructionTimeRemaining = self.constructionTime
-        except:
-            print(
-                "Something happened when initializing UnderConstruction for Base: " + str(e))
+        if self.isUnderConstruction:
+            self.constructionTimeRemaining = self.constructionTime
 
         # let's make a marine and see what happens
         # self.testUnit = unit.Unit("ghost", True)
