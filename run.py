@@ -106,7 +106,7 @@ if __name__ == "__main__":
                     current_units=[],
                     buildings=[],
                     bases=[Base(12, Race.ZERG, "normal",
-                                "normal", 2, False)],
+                                "normal", 2, False, True)],
                     build_order=[],
                     supply=3,
                     required_tech=get_all_required_tech(goal_units) + goal_units)

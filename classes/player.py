@@ -8,7 +8,6 @@
 from enum import Enum
 
 # local
-from classes.gamestate import WORKER_COST
 from classes import settings
 
 
@@ -73,7 +72,7 @@ class Player:
             for base in self.bases:
                 if base.makeWorker():
                     self.supply -= 1
-                    self.minerals -= WORKER_COST
+                    self.minerals -= settings.CONFIG["worker"]["mincost"]
                     settings.LOG.debug("making a worker")
                     return True
         return False
@@ -133,6 +132,7 @@ class Player:
     def chronoboost(self):
         return False
 
+    # add multiple bases later
     def debug(self):
         base_debug = self.bases[0].debug()
         return (self.race,

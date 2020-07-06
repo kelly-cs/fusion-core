@@ -6,10 +6,11 @@
 from classes.player import Race
 from classes import settings
 from classes.unit import Unit
+from classes.player import Race
 
 
 class Base():
-    def __init__(self, startingworkers, race, mineraltype, gastype, geysers, underconstruction):
+    def __init__(self, startingworkers, race, mineraltype, gastype, geysers, underconstruction, firstbase):
         # ALL WORKERS ARE SENT TO MINERALS BY DEFAULT, until a transfer order is made.
         # this is only for the 1st starting base.
         self.mineraltype = mineraltype  # can be "normal" or "rich"
@@ -36,6 +37,8 @@ class Base():
         self.energyRegenRate = 0.7875  # every second, add this to energy.
         self.energy = 50
         self.maxenergy = 200
+        # used primarily for hatcheries to know how many larvae start out
+        self.firstbase = firstbase
 
         # about how long it takes to transfer workers from 1 base to another
         self.timetoTransferBetweenBases = settings.CONFIG["timeToTransferWorkerseBetweenBases"]
@@ -53,7 +56,12 @@ class Base():
 
         # ZERG
         if self.raceType == Race.ZERG:
-            self.currentlarva = 3  # start the game with 3 active.
+            # start the game with 3 active - Only 1 when base is newly created (Thanks DEVIN)
+            if self.firstbase:
+                self.currentlarva = 3
+            else:
+                self.currentlarva = 1
+
             self.larvemax = 3  # max that can produce normally (via larvatimer)
             # max that can exist (with the help of a queen)
             self.larvainjectmax = 19
@@ -63,7 +71,10 @@ class Base():
             self.currentLarvaTimer = 0
             # this is 4 in HotS and WoL, but I don't care. This is how much a queen adds when injecting.
             self.injectAmt = 3
-
+            self.has_queen = False
+            self.queen_energy = 25
+            self.queen_energy_max = 200
+            self.queen_inject_energy_cost = 25
             self.isInjected = 0  # 0 or 1.
             # this is how long it takes for an inject to procuce injectAmt of larva here.
             self.injectTime = 40
@@ -85,8 +96,18 @@ class Base():
             self.chronoCost = settings.CONFIG["chronoboost"]["energycost"]
             self.isChronoBoosted = False  # is this structure chrono boosted?
 
+        # only for zerg as they do not use normal buildings to produce units.
+        self.currentArmyProduction = []
+        # for zerg, indicates time until an overlord is completed. for terran/toss, indicates time until supply depot/pylon completes.
+        self.currentSupplyProduction = []
         # workers represented by Unit class here, but will be treated as ints for less memory usage afterward in workersOnMins and workersInGas, etc.
         self.currentWorkerProduction = []
+
+        # Player will ask Base for any positive changes in supply each tick.
+        self.supplyToAdd = 0
+        # Player will ask Base for any newly completed units/buildings/tech each tick to add to ITS current_units list. Player does not care about workers.
+        self.unitsToAdd = []
+
         self.iscurrentlyResearching = False  # true/false
         self.current_research = None  # current research represented by Unit class
 
@@ -283,9 +304,41 @@ class Base():
 
         return False  # if all geysers are occupied.
 
+    def inject(self):
+        if self.has_queen and not self.isInjected:
+            self.isInjected = True
+            return True
+        else:
+            return False
     # this will take all timers in this object and subtract them by 1 per tick.
     # It also will remove objects from the production queue if they are finished, and apply them to the base.
+
     def subtractTimeRemaining(self):
+        if(self.raceType == Race.ZERG):
+            if self.currentLarvaTimer > 0:
+                self.currentLarvaTimer -= 1
+            else:
+                # reset the larva timer and create a new larva
+                self.currentlarva += 1
+                self.currentLarvaTimer = self.larvatimer
+
+            # Regen energy on queen if it exists
+            if self.has_queen and self.queen_energy < self.queen_energy_max:
+                self.queen_energy += self.energyRegenRate
+
+            # Tell Queen to Inject if possible
+            if self.has_queen and self.queen_energy >= self.queen_inject_energy_cost and not self.isInjected:
+                self.queen_energy -= self.queen_inject_energy_cost
+                self.injectTimeRemaining = self.injectTime
+                self.isInjected = True
+
+            # Inject Timer
+            if self.isInjected and self.injectTimeRemaining > 0:
+                self.injectTimeRemaining -= 1
+            else:
+                self.isInjected = False
+                self.currentlarva += 3
+
         for g in range(0, self.amtGeysers):
             if self.geysersUnderConstruction[g]:
                 self.geysersRemainingTime[g] -= 1

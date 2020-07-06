@@ -11,14 +11,13 @@ from builtins import *
 
 # local
 from classes import settings
-
+from classes.player import Race
 
 # ============================================================== #
 #  SECTION: Global Definitions                                   #
 # ============================================================== #
 
 STARTING_WORKERS = 12
-WORKER_COST = 50
 
 # ============================================================== #
 #  SECTION: Helpers Static                                       #
@@ -67,13 +66,14 @@ class GameState:
                                  self.player.build_geyser,
                                  self.player.transfer_to_gas,
                                  self.player.transfer_to_minerals,
-                                 self.player.transfer_to_base,
-                                 self.player.chronoboost]
+                                 self.player.transfer_to_base]
 
+        if player.race == Race.PROTOSS:
+            self.possible_actions.append(self.player.chronoboost)
 
-# ============================================================== #
-#  SECTION: Helpers Static                                       #
-# ============================================================== #
+    # ============================================================== #
+    #  SECTION: Helpers Static                                       #
+    # ============================================================== #
     # returns a dictionary containing all current gamestate data
 
     def debug_gamestate(self):
