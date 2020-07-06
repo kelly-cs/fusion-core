@@ -81,7 +81,7 @@ class Player:
     def build_geyser(self):
         for base in self.bases:  # check all bases
             if self.race == Race.ZERG:
-                if base.builtGeysers < len(base.geysers) and self.minerals >= 25:
+                if base.builtGeysers < len(base.geysers) and self.minerals >= 25 and base.workersOnMinerals >= 1:
                     if base.buildGeyser():
                         self.minerals -= 25
                         self.supply += 1

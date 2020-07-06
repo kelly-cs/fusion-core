@@ -18,25 +18,28 @@ class Base():
         self.workersOnMinerals = startingworkers
         self.builtGeysers = 0  # amt of built geysers
         # array containing amt of workers at each geyser. 0 and 1 index can each have workers. (so, [2,1] to represent 2 on the first, 1 on the second)
-        self.geysers = [0, 0]
-        self.geysersUnderConstruction = [False, False]
+        self.geysers = [0] * self.amtGeysers
+        self.geysersUnderConstruction = [False] * self.amtGeysers
         # time to build gas  = 21, can probably put into config
-        self.geysersRemainingTime = [21, 21]
-        self.isUnderConstruction = underconstruction  # true or false
-        self.constructionTime = 71  # amt of time to build a base
-        self.constructionTimeRemaining = 0  # amt of time remaining to construct this base
+        self.geysersRemainingTime = [
+            settings.CONFIG["extractor"]["time"]] * self.amtGeysers
+        # true or false, important for initial base vs expansions
+        self.isUnderConstruction = underconstruction
+        # amt of time to build a base
+        self.constructionTime = settings.CONFIG["hatchery"]["time"]
+        # amt of time remaining to construct this base
+        self.constructionTimeRemaining = settings.CONFIG["hatchery"]["time"]
         self.timeToBuildWorker = settings.CONFIG["worker"]["time"]  # default
         self.tickNum = 0  # amt of elapsed game time since this base was made
         self.iscurrentlyResearching = False  # true/false
-        self.currentResearch = "None"  # name of current research, from CONFIG/
+        self.current_research = None  # name of current research, from CONFIG/
         # time remaining of current research, reduce by 1 per tick
-        self.currentResearchTime = 0
         # start time of current research, from CONFIG.
-        self.currentResarchTimeRemaining = 0
+        self.current_research_time_remaining = 0
         # "z, t, or p" to represent zerg, terran, or protoss.
         self.raceType = race
         self.energyRegenRate = 0.7875  # every second, add this to energy.
-        self.energy = 0
+        self.energy = 50
         self.maxenergy = 200
 
         # other stuff
@@ -90,8 +93,10 @@ class Base():
 
         # PROTOSS
         if self.raceType == Race.PROTOSS:
-            self.energy = 50  # starting energy for protoss nexus
-            self.chronoCost = 50  # cost for chrono boost
+            # starting energy for protoss nexus
+            self.energy = settings.CONFIG["chronoboost"]["co"]
+            # cost for chrono boost
+            self.chronoCost = settings.CONFIG["chronoboost"]["energycost"]
             self.isChronoBoosted = False  # is this structure chrono boosted?
             self.workersCurrentlyBuilding = []
             # arbitrary - this will assume how long your probe is out of mining to build something.

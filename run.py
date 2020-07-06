@@ -146,7 +146,7 @@ if __name__ == "__main__":
                     build_order=[],
                     supply=3,
                     required_tech=get_all_required_tech(goal_units) + goal_units)
-    gamestate = GameState(remaining_ticks=25,
+    gamestate = GameState(remaining_ticks=5,
                           player=player)
     # store results in output
     simulation = run_simulation(output, gamestate, None)
