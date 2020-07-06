@@ -132,15 +132,11 @@ class Base():
             elif(self.workersOnMinerals >= 18):
                 mineralincome = self.workersOnMinerals * 1.111
 
-        if(self.geysers[0] <= 2):
-            gasincome += self.geysers[0] * 1
-        elif(self.geysers[0] == 3):
-            gasincome += 2.666
-
-        if(self.geysers[1] <= 2):
-            gasincome += self.geysers[1] * 1
-        elif(self.geysers[1] == 3):
-            gasincome += 2.666
+        for g in self.geysers:
+            if g <= 2:
+                gasincome += g
+            else:
+                gasincome += 2.666
 
         income = [mineralincome, gasincome]
         return income  # return as array
@@ -171,7 +167,7 @@ class Base():
         return False
 
     def getWorkers(self):
-        return [self.workersOnMinerals, self.geysers[0], self.geysers[1]]
+        return self.workersOnMinerals, self.geysers
 
     def getProductionQueue(self):
         if(self.raceType == Race.ZERG):
@@ -190,30 +186,22 @@ class Base():
 
     # This function will move 1 worker from Gas to minerals
     def transferGasToMins(self):
-        # always take from which geyser has 3 workers on it first - it affects gas income least.
-        if(self.geysers[0] > 2):
-            self.geysers[0] -= 1
-            self.workersBeingTransferredFromGasToMins.append(
-                self.timeToTransferMinsToGas)
-            return True
-        elif(self.geysers[1] > 2):
-            self.geysers[1] -= 1
-            self.workersBeingTransferredFromGasToMins.append(
-                self.timeToTansferMinsToGas)
-            return True
-        elif(self.geysers[0] > 0):
-            self.geysers[0] -= 1
-            self.workersBeingTransferredFromGasToMins.append(
-                self.timeToTansferMinsToGas)
-            return True
-        elif(self.geysers[1] > 0):
-            self.geysers[1] -= 1
-            self.workersBeingTransferredFromGasToMins.append(
-                self.timeToTansferMinsToGas)
-            return True
+        for g in self.geysers:
+            # always take from which geyser has 3 workers on it first - it affects gas income least.
+            if g > 2:
+                g -= 1
+                self.workersBeingTransferredFromGasToMins.append(
+                    self.timeToTransferMinsToGas)
+                return True
+            elif g > 0:
+                g -= 1
+                self.workersBeingTransferredFromGasToMins.append(
+                    self.timeToTransferMinsToGas)
+                return True
         return False
 
     # this will immediately remove a worker from this base, from the mineral line by default.
+
     def transferWorkerOutOfBase(self, newbase):
         if(self.workersOnMinerals > 0):
             self.workersOnMinerals -= 1
@@ -243,15 +231,8 @@ class Base():
 
     def buildGeyser(self):
         # to try and stop from building more geysers than are available
-        if(self.raceType == Race.ZERG and self.builtGeysers < 2 and len(self.workersBeingSentToBuildGas) < 2 and (not self.geysersUnderConstruction[0] or not self.geysersUnderConstruction[1])):
-            if(self.builtGeysers == 0):
-                # this will trigger the countdown timer each tick
-                self.geysersUnderConstruction[0] = True
-                return True
-            elif(self.builtGeysers == 1):
-                # this will trigger the countdown timer each tick
-                self.geysersUnderConstruction[1] = True
-                return True
+        if(self.raceType == Race.ZERG and self.builtGeysers < self.amtGeysers and len(self.workersBeingSentToBuildGas) < self.amtGeysers and not self.geysersUnderConstruction[self.builtGeysers]):
+            self.geysersUnderConstruction[self.builtGeysers] = True
         return False
 
     # initiates the command to build a geyser. once travel time finishes, the geyser actually starts being constructed.
@@ -268,30 +249,17 @@ class Base():
         # current limitation: does not handle when 2 geysers finish at the same time. not a huge deal but might be worth fixing later.
 
     def geyserComplete(self):
-        if(self.raceType == Race.ZERG):
-            if(self.builtGeysers == 0):
-                self.builtGeysers += 1
-                self.geysersUnderConstruction[0] = False
-                return True
-            elif(self.builtGeysers == 1):
-                self.builtGeysers += 1
-                self.geysersUnderConstruction[1] = False
-                return True
+        if self.raceType == Race.ZERG:  # does not get worker added automatically
+            self.geysersUnderConstruction[self.builtGeysers] = False
+            self.builtGeysers += 1
+            return True
         else:
-            # if this is the first geyser for this base
-            if(self.builtGeysers == 0):
-                self.geysers[0] = 1  # add 1 worker to the first geyser
-                self.builtGeysers += 1
-                self.geysersUnderConstruction[0] = False
-                return True
-            # if this is the second geyser for this base
-            elif(self.builtGeysers == 1):
-                self.geysers[1] = 1  # add 1 worker to the second geyser.
-                self.builtGeysers += 1
-                self.geysersUnderConstruction[1] = False
-                return True
-            else:
-                return False  # this shouldn't happen.
+            # adds worker to the newest geyser
+            self.geysersUnderConstruction[self.builtGeysers] = False
+            self.geysers[self.builtGeysers] = 1
+            self.builtGeysers += 1
+            return True
+        return False
 
     def isGeyserCompleted(self):
         if(self.geysersUnderConstruction[0] == True and self.geysersRemainingTime[0] <= 0):
@@ -317,8 +285,8 @@ class Base():
 
         return False  # if all geysers are occupied.
 
-# this will take all timers in this object and subtract them by 1 per tick.
-# It also will remove objects from the production queue if they are finished, and apply them to the base.
+    # this will take all timers in this object and subtract them by 1 per tick.
+    # It also will remove objects from the production queue if they are finished, and apply them to the base.
     def subtractTimeRemaining(self):
         if(self.geysersUnderConstruction[0]):
             self.geysersRemainingTime[0] -= 1

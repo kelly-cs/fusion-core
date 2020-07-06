@@ -8,11 +8,6 @@ from . import settings
 
 class Unit:
     def __init__(self, unitname):
-        # This will rely on a config being preloaded into GameState - in order to
-        # prevent reloading the config over and over every time a unit is made.
-        # maybe be concerned about this
-        # https://stackoverflow.com/questions/3277367/how-does-pythons-super-work-with-multiple-inheritance
-
         self.name = unitname
         self.mincost = settings.CONFIG[unitname]["mincost"]
         self.gascost = settings.CONFIG[unitname]["gascost"]
