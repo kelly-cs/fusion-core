@@ -5,6 +5,7 @@
 # local
 from classes.player import Race
 from classes import settings
+from classes.unit import Unit
 
 
 class Base():
@@ -31,8 +32,6 @@ class Base():
         self.constructionTimeRemaining = settings.CONFIG["hatchery"]["time"]
         self.timeToBuildWorker = settings.CONFIG["worker"]["time"]  # default
         self.tickNum = 0  # amt of elapsed game time since this base was made
-        self.iscurrentlyResearching = False  # true/false
-        self.current_research = None  # current research represented by Unit class
         self.raceType = race
         self.energyRegenRate = 0.7875  # every second, add this to energy.
         self.energy = 50
@@ -77,8 +76,8 @@ class Base():
         if self.raceType == Race.TERRAN:
             self.isOrbital = False
             self.isTurningIntoOrbital = 0
-            self.orbitalConstructionTime = 25
-            self.orbitalConstructionTimeRemaining = 0
+            self.orbitalConstructionTime = settings.CONFIG["orbitalcommand"]["time"]
+            self.orbitalConstructionTimeRemaining = self.orbitalConstructionTime
 
         # PROTOSS
         if self.raceType == Race.PROTOSS:
@@ -86,7 +85,10 @@ class Base():
             self.chronoCost = settings.CONFIG["chronoboost"]["energycost"]
             self.isChronoBoosted = False  # is this structure chrono boosted?
 
+        # workers represented by Unit class here, but will be treated as ints for less memory usage afterward in workersOnMins and workersInGas, etc.
         self.currentWorkerProduction = []
+        self.iscurrentlyResearching = False  # true/false
+        self.current_research = None  # current research represented by Unit class
 
     # updates 1 game second for everything in this object
     def tickUp(self):
@@ -152,11 +154,11 @@ class Base():
         # build as many workers as you want, if larvae exist.
         if self.raceType == Race.ZERG and self.currentlarva > 0:
             self.currentlarva -= 1
-            self.currentWorkerProduction.append(self.timeToBuildWorker)
+            self.currentWorkerProduction.append(Unit("worker"))
             return True
         # only 1 worker can be built at a time
         elif(self.raceType == Race.PROTOSS or self.raceType == Race.TERRAN) and self.hasFreeProduction():
-            self.currentWorkerProduction.append(self.timeToBuildWorker)
+            self.currentWorkerProduction.append(Unit("worker"))
             return True
         else:
             return False
@@ -374,7 +376,7 @@ class Base():
 
         index = 0
         for workers in self.currentWorkerProduction:
-            if(workers <= 0):  # if the timer is over
+            if(workers.build_time_remaining <= 0):  # if the timer is over
                 self.currentWorkerProduction.pop(index)
                 self.workersBeingTransferredToThisBase.append(
                     self.timeToTransferMinsToGas)  # about 5 seconds before you factor in income
@@ -389,6 +391,6 @@ class Base():
         if self.current_research == None and len(self.currentWorkerProduction) <= 0:
             return None
         elif len(self.currentWorkerProduction) > 0:
-            return {"worker": self.currentWorkerProduction}
+            return {"worker": self.currentWorkerProduction[0].build_time_remaining}
         else:
             return {self.current_research.name: self.current_research.build_time_remaining}
