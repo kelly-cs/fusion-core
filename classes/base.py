@@ -104,9 +104,9 @@ class Base():
         self.currentWorkerProduction = []
 
         # Player will ask Base for any positive changes in supply each tick.
-        self.supplyToAdd = 0
+        self.supply_to_add = 0
         # Player will ask Base for any newly completed units/buildings/tech each tick to add to ITS current_units list. Player does not care about workers.
-        self.unitsToAdd = []
+        self.units_to_add = []
 
         self.iscurrentlyResearching = False  # true/false
         self.current_research = None  # current research represented by Unit class

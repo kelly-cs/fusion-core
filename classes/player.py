@@ -9,6 +9,7 @@ from enum import Enum
 
 # local
 from classes import settings
+from classes import gamestate
 
 
 class Race(Enum):
@@ -23,7 +24,7 @@ class Race(Enum):
 
 
 class Player:
-    def __init__(self, race, minerals, gas, goal_units, current_units, buildings, bases, build_order, supply, required_tech):
+    def __init__(self, race, minerals, gas, goal_units, current_units, buildings, bases, build_order, supply, required_tech, remaining_ticks):
         self.race = race
         self.minerals = minerals
         self.gas = gas
@@ -35,13 +36,14 @@ class Player:
         self.supply = supply
         self.required_tech = required_tech
         self.allowedTransitions = 6
+        self.remaining_ticks = remaining_ticks
 
-    # def remainingTechToBuild(self):
-    #     tech = self.required_tech
-    #     for requirements in tech:
-    #         if requirements in self.current_units:
-    #             tech.remove(requirements)
-    #     return tech
+    def remainingTechToBuild(self):
+        tech = self.required_tech
+        for requirements in tech:
+            if requirements in self.current_units:
+                tech.remove(requirements)
+        return tech
 
     def tickUp(self):
         income_this_tick = [0, 0]
@@ -52,6 +54,10 @@ class Player:
             self.minerals += base.getIncomeThisTick()[0]
             # we'll pare this down later because this is stupid
             self.gas += base.getIncomeThisTick()[1]
+            self.supply += base.supply_to_add
+            base.supply_to_add = 0
+            for units in base.units_to_add:
+                self.current_units.append(units)
         #settings.LOG.debug("ticking up player")
         return income_this_tick  # as a list [ mins, gas ]
 
@@ -99,17 +105,22 @@ class Player:
     def transfer_to_gas(self):
         for base in self.bases:
             # if the geysers aren't all occupied
-            if base.builtGeysers > 0 and (base.geysers[0] < 3 or base.geysers[1] < 3):
-                settings.LOG.debug("transfer to gas in progress...")
-                return base.transferMinsToGas()
+            if base.builtGeysers > 0:
+                for g in base.geysers:
+                    if g < 3:
+                        settings.LOG.debug("transfer to gas in progress...")
+                        return base.transferMinsToGas()
         return False
 
     def transfer_to_minerals(self):
         for base in self.bases:
             # if there is at least 1 worker in a geyser
-            if base.builtGeysers > 0 and (base.geysers[0] > 0 or base.geysers[1] > 0):
-                settings.LOG.debug("transfer to minerals in progress...")
-                return base.transferGasToMins()
+            if base.builtGeysers > 0:
+                for g in base.geysers:
+                    if g > 0:
+                        settings.LOG.debug(
+                            "transfer to minerals in progress...")
+                        return base.transferGasToMins()
         return False
 
     def build_supply(self):
@@ -122,9 +133,16 @@ class Player:
         settings.LOG.debug("building supply failed")
         return False
 
-    def build_unit(self):
-        settings.LOG.debug("building unit failed")
-        return False
+    def current_buildable_units(self):
+        output = []
+        if self.race == Race.ZERG:
+            for units in self.remainingTechToBuild():
+                if self.minerals >= settings.CONFIG[units.name]["mincost"] and self.gas >= settings.CONFIG[units.name]["gascost"] and self.supply >= settings.CONFIG[units.name]["supply"]:
+                    for current in self.current_units:
+                        if settings.CONFIG[current.name]["builtfrom"] == units.name:
+                            output.append(units.name)
+
+        return output
 
     def transfer_to_base(self):
         return False

@@ -97,6 +97,8 @@ if __name__ == "__main__":
         "zergling"
     ]
 
+    max_ticks = 5
+
     settings.init()  # runs settings, makes it available across all files (init only needs to be ran here)
     output = []
     player = Player(Race.ZERG,
@@ -109,8 +111,10 @@ if __name__ == "__main__":
                                 "normal", 2, False, True)],
                     build_order=[],
                     supply=3,
-                    required_tech=get_all_required_tech(goal_units) + goal_units)
-    gamestate = GameState(remaining_ticks=5,
+                    required_tech=get_all_required_tech(
+                        goal_units) + goal_units,
+                    remaining_ticks=max_ticks)
+    gamestate = GameState(remaining_ticks=max_ticks,
                           player=player)
     # store results in output
     simulation = run_simulation(output, gamestate, None)
