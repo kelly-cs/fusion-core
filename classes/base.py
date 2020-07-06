@@ -244,9 +244,8 @@ class Base():
             return True
         return False
 
-        # when a geyser completes, run this function
-        # that is to say, when a timer reaches 0 in self.geyserRemainingTime, run this.
-        # current limitation: does not handle when 2 geysers finish at the same time. not a huge deal but might be worth fixing later.
+    # current limitation: does not handle when 2 geysers finish at the same time. not a huge deal but might be worth fixing later.
+    # (this is due to only 1 action being handled per tick)
 
     def geyserComplete(self):
         if self.raceType == Race.ZERG:  # does not get worker added automatically

@@ -84,42 +84,6 @@ def run_simulation(output, gamestate, target):
             gamestate_copy.remaining_ticks -= 1
             gamestate_copy.player.tickUp()
             run_simulation(output, gamestate_copy, target)
-    """
-        else:
-        if gamestate.target():
-            gamestate_copy = deepcopy(gamestate)
-            if settings.LOG.level == settings.logging.DEBUG:
-                gamestate_debug = dictgamestate_copy.debug_gamestate()
-                player_debug = gamestate_copy.debug_player()
-                bases_debug = gamestate_copy.debug_bases()
-                gamestate_copy.player.build_order.append(
-                    {"completed_action": gamestate.target.__name__, "gamestate": gamestate_debug, "player": player_debug, "bases": bases_debug})
-
-            else:  # if NOT in debug mode, we get only practical information
-                gamestate_copy.player.build_order.append(
-                    {"completed_action": action.__name__, "gamestate": gamestate_debug})
-
-            # regardless of logging level, we recurse normally.
-            gamestate_copy.remaining_ticks -= 1
-            gamestate_copy.player.tickUp()
-            gamestate_copy.target = None
-            run_simulation(output, gamestate_copy)
-
-        else:  # retain target and only try this until successful.
-            gamestate_copy = deepcopy(gamestate)
-            if settings.LOG.level == settings.logging.DEBUG:
-                gamestate_debug = gamestate_copy.debug_gamestate()
-                player_debug = gamestate_copy.debug_player()
-                bases_debug = gamestate_copy.debug_bases()
-                gamestate_copy.player.build_order.append({"target": gamestate.target.__name__, "gamestate": gamestate_debug, "player": player_debug, "bases": bases_debug}
-                                                         )
-            else:  # if NOT in debug mode, we get only practical information
-                gamestate_copy.player.build_order.append({"target": gamestate.target.__name__, "gamestate": gamestate_debug}
-                                                         )
-            gamestate_copy = deepcopy(gamestate)
-            gamestate_copy.remaining_ticks -= 1
-            gamestate_copy.player.tickUp()
-            run_simulation(output, gamestate_copy) """
 
 
 # ============================================================== #
