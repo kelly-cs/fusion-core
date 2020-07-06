@@ -299,7 +299,7 @@ class Base():
                 self.workersBeingSentToBuildGas.append(
                     self.workerTravelTimeToBuild)  # about 5 seconds before you get to building
             else:
-                workers -= 1
+                workers.tick()
                 index += 1
 
         index = 0
