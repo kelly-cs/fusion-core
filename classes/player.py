@@ -9,7 +9,6 @@ from enum import Enum
 
 # local
 from classes import settings
-from classes import gamestate
 
 
 class Race(Enum):
