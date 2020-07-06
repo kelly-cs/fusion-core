@@ -93,8 +93,6 @@ class Base():
 
         # PROTOSS
         if self.raceType == Race.PROTOSS:
-            # starting energy for protoss nexus
-            self.energy = settings.CONFIG["chronoboost"]["co"]
             # cost for chrono boost
             self.chronoCost = settings.CONFIG["chronoboost"]["energycost"]
             self.isChronoBoosted = False  # is this structure chrono boosted?
