@@ -108,8 +108,7 @@ class GameState:
                 "workersBeingTransferredFromGasToMins": base.workersBeingTransferredFromGasToMins,
                 "workersBeingTransferredFromMinsToGas": base.workersBeingTransferredFromMinsToGas,
                 "workersBeingTransferredToThisBase": base.workersBeingTransferredToThisBase,
-                "isCurrentlyResearching": base.iscurrentlyResearching,
-                "remainingResearchTime": base.current_research_time_remaining,
+                "production": base.get_production(),
                 "isHatchery": base.isHatchery,
                 "isLair": base.isLair,
                 "isHive": base.isHive

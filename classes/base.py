@@ -32,24 +32,19 @@ class Base():
         self.timeToBuildWorker = settings.CONFIG["worker"]["time"]  # default
         self.tickNum = 0  # amt of elapsed game time since this base was made
         self.iscurrentlyResearching = False  # true/false
-        self.current_research = None  # name of current research, from CONFIG/
-        # time remaining of current research, reduce by 1 per tick
-        # start time of current research, from CONFIG.
-        self.current_research_time_remaining = 0
-        # "z, t, or p" to represent zerg, terran, or protoss.
+        self.current_research = None  # current research represented by Unit class
         self.raceType = race
         self.energyRegenRate = 0.7875  # every second, add this to energy.
         self.energy = 50
         self.maxenergy = 200
 
-        # other stuff
         # about how long it takes to transfer workers from 1 base to another
         self.timetoTransferBetweenBases = settings.CONFIG["timeToTransferWorkerseBetweenBases"]
-        # this is a list that will just contain timers represnting workers [4, 11, 15]
+        # this is a list that will just contain timers representing workers [4, 11, 15]
         self.workersBeingTransferredToThisBase = []
         # about how long it takes to transfer workers from minerals to gas, and vice versa
         self.timeToTransferMinsToGas = settings.CONFIG["timeToTransferWorkersFromMinsToGas"]
-        # this is a list that will just contain timers represnting workers [4, 11, 15]
+        # this is a list that will just contain timers representing workers [4, 11, 15]
         self.workersBeingTransferredFromMinsToGas = []
         self.workersBeingTransferredFromGasToMins = []
         # list containing timers for how long it takes to build a refinery/gas extractor. Generally about 2-3 seconds/ticks.
@@ -78,36 +73,22 @@ class Base():
             self.isHatchery = True
             self.isLair = False
             self.isHive = False
-            self.lairResearchTime = settings.CONFIG["lair"]["time"]
-            self.hiveResearchTime = settings.CONFIG["hive"]["time"]
-            self.burrowResearchTime = settings.CONFIG["burrow"]["time"]
-            self.pneumatizedCarapaceResearchTime = settings.CONFIG["pneumatizedcarapace"]["time"]
         # TERRAN
         if self.raceType == Race.TERRAN:
             self.isOrbital = False
             self.isTurningIntoOrbital = 0
             self.orbitalConstructionTime = 25
             self.orbitalConstructionTimeRemaining = 0
-            # this will be an array of timers, for occupied SCVs.
-            self.workersCurrentlyBuilding = []
 
         # PROTOSS
         if self.raceType == Race.PROTOSS:
             # cost for chrono boost
             self.chronoCost = settings.CONFIG["chronoboost"]["energycost"]
             self.isChronoBoosted = False  # is this structure chrono boosted?
-            self.workersCurrentlyBuilding = []
-            # arbitrary - this will assume how long your probe is out of mining to build something.
-        # array containing a timer on how long the worker will take to be done.
-        self.currentWorkerProduction = []
-        if self.isUnderConstruction:
-            self.constructionTimeRemaining = self.constructionTime
 
-        # let's make a marine and see what happens
-        # self.testUnit = unit.Unit("ghost", True)
+        self.currentWorkerProduction = []
 
     # updates 1 game second for everything in this object
-
     def tickUp(self):
         self.subtractTimeRemaining()  # deal with all timers, workers, upgrade production
 
@@ -360,7 +341,7 @@ class Base():
                 self.workersBeingSentToBuildGas.pop(index)
                 self.buildGeyser()
             else:
-                workers -= 1
+                workers.tick()
                 index += 1
 
         index = 0
@@ -369,7 +350,7 @@ class Base():
                 self.workersBeingTransferredFromMinsToGas.pop(index)
                 self.addWorkerToCompletedGeyser()
             else:
-                workers -= 1
+                workers.tick()
                 index += 1
 
         index = 0
@@ -378,8 +359,8 @@ class Base():
                 self.workersBeingTransferredToThisBase.pop(index)
                 self.workersOnMinerals += 1
             else:
-                workers -= 1
-                workers -= 1
+                workers.tick()
+                index += 1
 
         index = 0
         for workers in self.workersBeingSentToBuildGas:
@@ -388,7 +369,7 @@ class Base():
                 self.workersBeingSentToBuildGas.append(
                     self.workerTravelTimeToBuild)  # about 5 seconds before you get to building
             else:
-                workers -= 1
+                workers.tick()
                 index += 1
 
         index = 0
@@ -398,8 +379,16 @@ class Base():
                 self.workersBeingTransferredToThisBase.append(
                     self.timeToTransferMinsToGas)  # about 5 seconds before you factor in income
             else:
-                workers -= 1
+                workers.tick()
                 index += 1
 
     def debug(self):
         return None
+
+    def get_production(self):
+        if self.current_research == None and len(self.currentWorkerProduction) <= 0:
+            return None
+        elif len(self.currentWorkerProduction) > 0:
+            return {"worker": self.currentWorkerProduction}
+        else:
+            return {self.current_research.name: self.current_research.build_time_remaining}
