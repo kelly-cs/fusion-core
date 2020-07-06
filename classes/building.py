@@ -49,6 +49,7 @@ class Building():
                     else:
                         units.is_constructed = True
                         currentunits.append(units)
+                        self.current_production = None
             else:
                 for units in self.current_production:  # handles instances where multiple units can be produced, really only including buildings with reactors
                     if units.build_time_remaining > 0:

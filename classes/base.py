@@ -261,10 +261,9 @@ class Base():
         return False
 
     def isGeyserCompleted(self):
-        if(self.geysersUnderConstruction[0] == True and self.geysersRemainingTime[0] <= 0):
-            return True
-        elif(self.geysersUnderConstruction[1] == True and self.geysersRemainingTime[1] <= 0):
-            return True
+        for g in range(0, self.amtGeysers):
+            if self.geysersUnderConstruction[g] == True and self.geysersRemainingTime[g] <= 0:
+                return True
         return False
 
     # assumes that a worker has already traveled long enough to reach the gas
@@ -287,10 +286,9 @@ class Base():
     # this will take all timers in this object and subtract them by 1 per tick.
     # It also will remove objects from the production queue if they are finished, and apply them to the base.
     def subtractTimeRemaining(self):
-        if(self.geysersUnderConstruction[0]):
-            self.geysersRemainingTime[0] -= 1
-        if(self.geysersUnderConstruction[1]):
-            self.geysersRemainingTime[1] -= 1
+        for g in range(0, self.amtGeysers):
+            if self.geysersUnderConstruction[g]:
+                self.geysersRemainingTime[g] -= 1
         if(self.isGeyserCompleted()):
             self.geyserComplete()
 

@@ -5,6 +5,8 @@
 
 from . import settings
 
+# Unit does not keep track of whether it is chronoboosted, only if it should tick as if it is chronoboosted.
+
 
 class Unit:
     def __init__(self, unitname):
