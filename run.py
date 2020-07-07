@@ -9,6 +9,7 @@ from copy import deepcopy
 from builtins import *
 import json
 # third party library
+import argparse
 
 # local
 from classes import settings
@@ -16,6 +17,7 @@ from classes.gamestate import GameState
 from classes.player import Player, Race
 from classes.gamestate import get_all_required_tech
 from classes.base import Base
+from tests import test
 
 # ============================================================== #
 #  SECTION: Helpers                                              #
