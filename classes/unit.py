@@ -3,7 +3,8 @@
 #  SECTION: Imports                                              #
 # ============================================================== #
 
-from . import settings
+from classes.settings import CONFIG
+from classes.settings import LOG
 
 # Unit does not keep track of whether it is chronoboosted, only if it should tick as if it is chronoboosted.
 
@@ -11,15 +12,15 @@ from . import settings
 class Unit:
     def __init__(self, unitname):
         self.name = unitname
-        self.mincost = settings.CONFIG[unitname]["mincost"]
-        self.gascost = settings.CONFIG[unitname]["gascost"]
-        self.time_to_construct = settings.CONFIG[unitname]["time"]
+        self.mincost = CONFIG[unitname]["mincost"]
+        self.gascost = CONFIG[unitname]["gascost"]
+        self.time_to_construct = CONFIG[unitname]["time"]
         self.build_time_remaining = self.time_to_construct
-        self.supply = settings.CONFIG[unitname]["supply"]
+        self.supply = CONFIG[unitname]["supply"]
         # for units that produce other units.. pretty much only the carrier? We'll need some special logic for this
         self.current_production = []
         self.is_constructed = False
-        self.chronoboost_speed = settings.CONFIG["chronoboost"]["speedboost"]
+        self.chronoboost_speed = CONFIG["chronoboost"]["speedboost"]
 
     def tick(self):
         if(self.build_time_remaining > 0):

@@ -10,7 +10,8 @@ from builtins import *
 # third party library
 
 # local
-from classes import settings
+from classes.settings import CONFIG
+from classes.settings import LOG
 from classes.player import Race
 
 # ============================================================== #
@@ -27,16 +28,16 @@ STARTING_WORKERS = 12
 def get_all_required_tech(composition):
     requiredtech = []  # return a list of all required items, using the config file for help
     for unitname in composition:  # for all things you want to make
-        if unitname in settings.CONFIG:  # if these things are things you can actually make
+        if unitname in CONFIG:  # if these things are things you can actually make
             # if there's any requirements
-            if len(settings.CONFIG[unitname]["requires"]) > 0:
+            if len(CONFIG[unitname]["requires"]) > 0:
                 # check each requirement for that unit
-                for each_requirement in settings.CONFIG[unitname]["requires"]:
+                for each_requirement in CONFIG[unitname]["requires"]:
                     if each_requirement not in requiredtech:
                         # print(each_requirement)
                         requiredtech.append(each_requirement)
                         # if there's more nested requirements
-                        if len(settings.CONFIG[each_requirement]["requires"]) > 0:
+                        if len(CONFIG[each_requirement]["requires"]) > 0:
                             requiredtech.extend(  # let's just call this function again
                                 get_all_required_tech([each_requirement]))
 

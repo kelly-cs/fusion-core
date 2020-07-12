@@ -8,7 +8,8 @@
 # third party library
 
 # local
-from classes import settings
+from classes.settings import CONFIG
+from classes.settings import LOG
 from classes.unit import Unit
 # "spawningpool": {"istech":0,"isbuilding":1,"supply": 0, "mincost": 200,"gascost": 0,"time": 46,"requires": [],"builtfrom": "worker"},
 
@@ -17,17 +18,17 @@ class Building():
     # by default buildings start under construction with values from units.ini
     def __init__(self, building_name):
         self.building_name = building_name
-        self.istech = settings.CONFIG[self.building_name]["istech"]
-        self.mincost = settings.CONFIG[self.building_name]["mincost"]
-        self.gascost = settings.CONFIG[self.building_name]["gascost"]
-        self.time_to_build = settings.CONFIG[self.building_name]["time"]
+        self.istech = CONFIG[self.building_name]["istech"]
+        self.mincost = CONFIG[self.building_name]["mincost"]
+        self.gascost = CONFIG[self.building_name]["gascost"]
+        self.time_to_build = CONFIG[self.building_name]["time"]
         self.build_time_remaining = self.time_to_build
         # 1 in vast majority of cases, but reactors make this complicated
-        self.production_throughput = settings.CONFIG[self.building_name]["throughput"]
-        self.current_production = None
+        self.production_throughput = CONFIG[self.building_name]["throughput"]
+        self.current_production = []
         self.is_constructed = False
         self.is_chronoboosted = False
-        self.chronoboost_time = settings.config["chronoboost"]["time"]
+        self.chronoboost_time = CONFIG["chronoboost"]["time"]
         self.chronoboost_remaining = 0
         # the design pattern we will use for producing things out of buildings is to:
         # check the unit name in CONFIG and see what it is built from (and ensure requirements are met)
@@ -69,8 +70,13 @@ class Building():
     # however, this class will still ensure that it is the proper building to produce the unit from.
 
     def build(self, unitname):
-        if self.current_production == None:  # if we are not building something else
-            # if the unit is meant to be built from this building
-            if settings.CONFIG[unitname]["builtfrom"] == self.building_name:
-                self.current_production.append(
-                    Unit(unitname))  # create a new unit and build it from this structure
+        try:
+            if self.current_production == []:  # if we are not building something else
+                # if the unit is meant to be built from this building
+                if CONFIG[unitname]["builtfrom"] == self.building_name:
+                    self.current_production.append(
+                        Unit(unitname))  # create a new unit and build it from this structure
+                    return True
+            return False
+        except:
+            return KeyError

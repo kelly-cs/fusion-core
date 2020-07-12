@@ -8,7 +8,8 @@
 from enum import Enum
 
 # local
-from classes import settings
+from classes.settings import CONFIG
+from classes.settings import LOG
 
 
 class Race(Enum):
@@ -57,15 +58,15 @@ class Player:
             base.supply_to_add = 0
             for units in base.units_to_add:
                 self.current_units.append(units)
-        #settings.LOG.debug("ticking up player")
+        #LOG.debug("ticking up player")
         return income_this_tick  # as a list [ mins, gas ]
 
     def canTransition(self):
         if self.allowedTransitions > 0:
-            settings.LOG.debug("transition IS allowed")
+            LOG.debug("transition IS allowed")
             return True
         else:
-            settings.LOG.debug("transition not allowed")
+            LOG.debug("transition not allowed")
             return False
 
     #######################################
@@ -77,8 +78,8 @@ class Player:
             for base in self.bases:
                 if base.makeWorker():
                     self.supply -= 1
-                    self.minerals -= settings.CONFIG["worker"]["mincost"]
-                    settings.LOG.debug("making a worker")
+                    self.minerals -= CONFIG["worker"]["mincost"]
+                    LOG.debug("making a worker")
                     return True
         return False
 
@@ -89,14 +90,14 @@ class Player:
                     if base.buildGeyser():
                         self.minerals -= 25
                         self.supply += 1
-                        settings.LOG.debug("building zerg extractor")
+                        LOG.debug("building zerg extractor")
                         return True
                 return False
             else:
                 if base.builtGeysers < base.amtGeysers and self.minerals >= 75:
                     if base.buildGeyser():
                         self.minerals -= 75
-                        settings.LOG.debug("building terran/protoss geyser")
+                        LOG.debug("building terran/protoss geyser")
                         return True
                 return False
         return False
@@ -107,7 +108,7 @@ class Player:
             if base.builtGeysers > 0:
                 for g in base.geysers:
                     if g < 3:
-                        settings.LOG.debug("transfer to gas in progress...")
+                        LOG.debug("transfer to gas in progress...")
                         return base.transferMinsToGas()
         return False
 
@@ -117,7 +118,7 @@ class Player:
             if base.builtGeysers > 0:
                 for g in base.geysers:
                     if g > 0:
-                        settings.LOG.debug(
+                        LOG.debug(
                             "transfer to minerals in progress...")
                         return base.transferGasToMins()
         return False
@@ -127,18 +128,18 @@ class Player:
             for base in self.bases:
                 if base.hasFreeProduction():
                     base.useLarva()
-                    settings.LOG.debug("building zerg supply")
+                    LOG.debug("building zerg supply")
                     return True
-        settings.LOG.debug("building supply failed")
+        LOG.debug("building supply failed")
         return False
 
     def current_buildable_units(self):
         output = []
         if self.race == Race.ZERG:
             for units in self.remainingTechToBuild():
-                if self.minerals >= settings.CONFIG[units.name]["mincost"] and self.gas >= settings.CONFIG[units.name]["gascost"] and self.supply >= settings.CONFIG[units.name]["supply"]:
+                if self.minerals >= CONFIG[units.name]["mincost"] and self.gas >= CONFIG[units.name]["gascost"] and self.supply >= CONFIG[units.name]["supply"]:
                     for current in self.current_units:
-                        if settings.CONFIG[current.name]["builtfrom"] == units.name:
+                        if CONFIG[current.name]["builtfrom"] == units.name:
                             output.append(units.name)
 
         return output

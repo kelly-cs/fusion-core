@@ -10,9 +10,10 @@ from builtins import *
 import json
 # third party library
 import argparse
-
+import logging
 # local
-from classes import settings
+from classes.settings import CONFIG
+from classes.setttings import LOG
 from classes.gamestate import GameState
 from classes.player import Player, Race
 from classes.gamestate import get_all_required_tech
@@ -37,8 +38,8 @@ def run_simulation(output, gamestate, target):
             # this has to be a copy or we don't branch correctly.
             if action_function():
                 # print(action.__name__)
-                settings.LOG.debug(action_name)
-                if settings.LOG.level == settings.logging.DEBUG:
+                LOG.debug(action_name)
+                if LOG.level == logging.DEBUG:
                     gamestate_copy.player.build_order.append({"completed_action": action_name, "gamestate": gamestate_copy.debug_gamestate(), "player": gamestate_copy.debug_player(), "bases": gamestate_copy.debug_bases()}
                                                              )
                 else:  # if NOT in debug mode, we get only practical information
@@ -50,7 +51,7 @@ def run_simulation(output, gamestate, target):
                 gamestate_copy.player.tickUp()
                 run_simulation(output, gamestate_copy, None)
             else:  # if the action fails
-                if settings.LOG.level == settings.logging.DEBUG:
+                if LOG.level == logging.DEBUG:
                     gamestate_copy.player.build_order.append({"target": action_name, "gamestate": gamestate_copy.debug_gamestate(), "player": gamestate_copy.debug_player(), "bases": gamestate_copy.debug_bases()}
                                                              )
                 else:  # if NOT in debug mode, we get only practical information
@@ -66,7 +67,7 @@ def run_simulation(output, gamestate, target):
         action_function = getattr(gamestate_copy.player, action_name)
         # this has to be a copy or we don't branch correctly.
         if action_function():  # run the target function. If successful, proceed here.
-            if settings.LOG.level == settings.logging.DEBUG:
+            if LOG.level == logging.DEBUG:
                 gamestate_copy.player.build_order.append({"completed_action": action_name, "gamestate": gamestate_copy.debug_gamestate(), "player": gamestate_copy.debug_player(), "bases": gamestate_copy.debug_bases()}
                                                          )
             else:  # if NOT in debug mode, we get only practical information
@@ -77,7 +78,7 @@ def run_simulation(output, gamestate, target):
             # because the action worked this time, we set it back to None.
             run_simulation(output, gamestate_copy, None)
         else:  # if the target fails, keep it set as the target and recurse until it is possible.
-            if settings.LOG.level == settings.logging.DEBUG:
+            if LOG.level == logging.DEBUG:
                 gamestate_copy.player.build_order.append({"target": action_name, "gamestate": gamestate_copy.debug_gamestate(), "player": gamestate_copy.debug_player(), "bases": gamestate_copy.debug_bases()}
                                                          )
             else:  # if NOT in debug mode, we get only practical information
@@ -100,8 +101,6 @@ if __name__ == "__main__":
     ]
 
     max_ticks = 5
-
-    settings.init()  # runs settings, makes it available across all files (init only needs to be ran here)
     output = []
     player = Player(Race.ZERG,
                     minerals=50,
@@ -123,4 +122,4 @@ if __name__ == "__main__":
     # print(simulation)
     # print(output)
     # print(len(output))
-    settings.LOG.info(json.dumps(output))
+    LOG.info(json.dumps(output))

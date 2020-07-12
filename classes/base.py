@@ -4,7 +4,8 @@
 
 # local
 from classes.player import Race
-from classes import settings
+from classes.settings import CONFIG
+from classes.settings import LOG
 from classes.unit import Unit
 from classes.player import Race
 
@@ -24,14 +25,14 @@ class Base():
         self.geysersUnderConstruction = [False] * self.amtGeysers
         # time to build gas  = 21, can probably put into config
         self.geysersRemainingTime = [
-            settings.CONFIG["extractor"]["time"]] * self.amtGeysers
+            CONFIG["extractor"]["time"]] * self.amtGeysers
         # true or false, important for initial base vs expansions
         self.isUnderConstruction = underconstruction
         # amt of time to build a base
-        self.constructionTime = settings.CONFIG["hatchery"]["time"]
+        self.constructionTime = CONFIG["hatchery"]["time"]
         # amt of time remaining to construct this base
-        self.constructionTimeRemaining = settings.CONFIG["hatchery"]["time"]
-        self.timeToBuildWorker = settings.CONFIG["worker"]["time"]  # default
+        self.constructionTimeRemaining = CONFIG["hatchery"]["time"]
+        self.timeToBuildWorker = CONFIG["worker"]["time"]  # default
         self.tickNum = 0  # amt of elapsed game time since this base was made
         self.raceType = race
         self.energyRegenRate = 0.7875  # every second, add this to energy.
@@ -41,18 +42,18 @@ class Base():
         self.firstbase = firstbase
 
         # about how long it takes to transfer workers from 1 base to another
-        self.timetoTransferBetweenBases = settings.CONFIG["timeToTransferWorkerseBetweenBases"]
+        self.timetoTransferBetweenBases = CONFIG["timeToTransferWorkerseBetweenBases"]
         # this is a list that will just contain timers representing workers [4, 11, 15]
         self.workersBeingTransferredToThisBase = []
         # about how long it takes to transfer workers from minerals to gas, and vice versa
-        self.timeToTransferMinsToGas = settings.CONFIG["timeToTransferWorkersFromMinsToGas"]
+        self.timeToTransferMinsToGas = CONFIG["timeToTransferWorkersFromMinsToGas"]
         # this is a list that will just contain timers representing workers [4, 11, 15]
         self.workersBeingTransferredFromMinsToGas = []
         self.workersBeingTransferredFromGasToMins = []
         # list containing timers for how long it takes to build a refinery/gas extractor. Generally about 2-3 seconds/ticks.
         self.workersBeingSentToBuildGas = []
         # generally how long it takes for a worker to move to and from building something (one way)
-        self.workerTravelTimeToBuild = settings.CONFIG["timeForWorkersToBuild"]
+        self.workerTravelTimeToBuild = CONFIG["timeForWorkersToBuild"]
 
         # ZERG
         if self.raceType == Race.ZERG:
@@ -87,13 +88,13 @@ class Base():
         if self.raceType == Race.TERRAN:
             self.isOrbital = False
             self.isTurningIntoOrbital = 0
-            self.orbitalConstructionTime = settings.CONFIG["orbitalcommand"]["time"]
+            self.orbitalConstructionTime = CONFIG["orbitalcommand"]["time"]
             self.orbitalConstructionTimeRemaining = self.orbitalConstructionTime
 
         # PROTOSS
         if self.raceType == Race.PROTOSS:
             # cost for chrono boost
-            self.chronoCost = settings.CONFIG["chronoboost"]["energycost"]
+            self.chronoCost = CONFIG["chronoboost"]["energycost"]
             self.isChronoBoosted = False  # is this structure chrono boosted?
 
         # only for zerg as they do not use normal buildings to produce units.
