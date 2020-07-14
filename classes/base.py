@@ -42,18 +42,18 @@ class Base():
         self.firstbase = firstbase
 
         # about how long it takes to transfer workers from 1 base to another
-        self.timetoTransferBetweenBases = CONFIG["timeToTransferWorkerseBetweenBases"]
+        self.timetoTransferBetweenBases = CONFIG["timeToTransferWorkerseBetweenBases"]["time"]
         # this is a list that will just contain timers representing workers [4, 11, 15]
         self.workersBeingTransferredToThisBase = []
         # about how long it takes to transfer workers from minerals to gas, and vice versa
-        self.timeToTransferMinsToGas = CONFIG["timeToTransferWorkersFromMinsToGas"]
+        self.timeToTransferMinsToGas = CONFIG["timeToTransferWorkersFromMinsToGas"]["time"]
         # this is a list that will just contain timers representing workers [4, 11, 15]
         self.workersBeingTransferredFromMinsToGas = []
         self.workersBeingTransferredFromGasToMins = []
         # list containing timers for how long it takes to build a refinery/gas extractor. Generally about 2-3 seconds/ticks.
         self.workersBeingSentToBuildGas = []
         # generally how long it takes for a worker to move to and from building something (one way)
-        self.workerTravelTimeToBuild = CONFIG["timeForWorkersToBuild"]
+        self.workerTravelTimeToBuild = CONFIG["timeForWorkersToBuild"]["time"]
 
         # ZERG
         if self.raceType == Race.ZERG:
