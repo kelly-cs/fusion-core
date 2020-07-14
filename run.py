@@ -13,12 +13,11 @@ import argparse
 import logging
 # local
 from classes.settings import CONFIG
-from classes.setttings import LOG
+from classes.settings import LOG
 from classes.gamestate import GameState
 from classes.player import Player, Race
 from classes.gamestate import get_all_required_tech
 from classes.base import Base
-from tests import test
 
 # ============================================================== #
 #  SECTION: Helpers                                              #

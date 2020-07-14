@@ -49,7 +49,7 @@ class Player:
         income_this_tick = [0, 0]
 
         for base in self.bases:  # check each base for income
-            base.tickUp()
+            base.tickUp(1)
             # [ minerals, gas ]
             self.minerals += base.getIncomeThisTick()[0]
             # we'll pare this down later because this is stupid
@@ -100,6 +100,15 @@ class Player:
                         LOG.debug("building terran/protoss geyser")
                         return True
                 return False
+        return False
+
+    # build the first unit in the queue for now
+    def build_unit(self):
+        if len(self.goal_units) > 0:
+            if self.goal_units[0] in CONFIG:
+                for buildings in self.buildings:
+                    if buildings.building_name == CONFIG[self.goal_units[0]]["builtfrom"] and buildings.build[self.goal_units[0]]:
+                        return True
         return False
 
     def transfer_to_gas(self):

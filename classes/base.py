@@ -69,7 +69,7 @@ class Base():
             # this is how long it takes to make a larvae, when below larvamax.
             self.larvatimer = 11
             # this is the current time before making another larva.
-            self.currentLarvaTimer = 0
+            self.currentLarvaTimer = self.larvatimer
             # this is 4 in HotS and WoL, but I don't care. This is how much a queen adds when injecting.
             self.injectAmt = 3
             self.has_queen = False
@@ -113,21 +113,23 @@ class Base():
         self.current_research = None  # current research represented by Unit class
 
     # updates 1 game second for everything in this object
-    def tickUp(self):
-        self.subtractTimeRemaining()  # deal with all timers, workers, upgrade production
+    def tickUp(self, duration):
+        if duration > 0:
+            self.subtractTimeRemaining()  # deal with all timers, workers, upgrade production
 
-        # ZERG
+            # ZERG
 
-        # TERRAN
+            # TERRAN
 
-        # PROTOSS
+            # PROTOSS
 
-        # OTHER
-        if(self.raceType == Race.PROTOSS or (self.raceType == Race.TERRAN and self.isOrbital)):
-            if(self.energy < self.maxenergy):
-                self.energy += self.energyRegenRate
+            # OTHER
+            if(self.raceType == Race.PROTOSS or (self.raceType == Race.TERRAN and self.isOrbital)):
+                if(self.energy < self.maxenergy):
+                    self.energy += self.energyRegenRate
 
-        self.tickNum += 1
+            self.tickNum += 1
+            self.tickUp(duration - 1)
         return True
 
     # returns an array [minerals, gas] for all income gained this tick. Should be ran before "tick" for accurate income.
@@ -306,7 +308,9 @@ class Base():
         return False  # if all geysers are occupied.
 
     def inject(self):
-        if self.has_queen and not self.isInjected:
+        if self.has_queen and not self.isInjected and self.queen_energy >= self.queen_inject_energy_cost:
+            self.queen_energy -= self.queen_inject_energy_cost
+            self.injectTimeRemaining = self.injectTime
             self.isInjected = True
             return True
         else:
@@ -316,11 +320,11 @@ class Base():
 
     def subtractTimeRemaining(self):
         if(self.raceType == Race.ZERG):
-            if self.currentLarvaTimer > 0:
+            if self.currentLarvaTimer > 0 and self.currentlarva < self.larvemax:
                 self.currentLarvaTimer -= 1
-            else:
-                # reset the larva timer and create a new larva
+            elif self.currentLarvaTimer <= 0 and self.currentlarva < self.larvaemax:
                 self.currentlarva += 1
+            else:
                 self.currentLarvaTimer = self.larvatimer
 
             # Regen energy on queen if it exists
