@@ -56,46 +56,44 @@ class Base():
         self.workerTravelTimeToBuild = CONFIG["timeForWorkersToBuild"]["time"]
 
         # ZERG
-        if self.raceType == Race.ZERG:
-            # start the game with 3 active - Only 1 when base is newly created (Thanks DEVIN)
-            if self.firstbase:
-                self.currentlarva = 3
-            else:
-                self.currentlarva = 1
 
-            self.larvemax = 3  # max that can produce normally (via larvatimer)
-            # max that can exist (with the help of a queen)
-            self.larvainjectmax = 19
-            # this is how long it takes to make a larvae, when below larvamax.
-            self.larvatimer = 11
-            # this is the current time before making another larva.
-            self.currentLarvaTimer = self.larvatimer
-            # this is 4 in HotS and WoL, but I don't care. This is how much a queen adds when injecting.
-            self.injectAmt = 3
-            self.has_queen = False
-            self.queen_energy = 25
-            self.queen_energy_max = 200
-            self.queen_inject_energy_cost = 25
-            self.isInjected = 0  # 0 or 1.
-            # this is how long it takes for an inject to procuce injectAmt of larva here.
-            self.injectTime = 40
-            # this is how long is remaining to produce injectAmt of larva, but only if isInjected is active (1)
-            self.injectTimeRemaining = 0
-            self.isHatchery = True
-            self.isLair = False
-            self.isHive = False
-        # TERRAN
-        if self.raceType == Race.TERRAN:
-            self.isOrbital = False
-            self.isTurningIntoOrbital = 0
-            self.orbitalConstructionTime = CONFIG["orbitalcommand"]["time"]
-            self.orbitalConstructionTimeRemaining = self.orbitalConstructionTime
+        # start the game with 3 active - Only 1 when base is newly created (Thanks DEVIN)
+        if self.firstbase:
+            self.currentlarva = 3
+        else:
+            self.currentlarva = 1
 
-        # PROTOSS
-        if self.raceType == Race.PROTOSS:
-            # cost for chrono boost
-            self.chronoCost = CONFIG["chronoboost"]["energycost"]
-            self.isChronoBoosted = False  # is this structure chrono boosted?
+        self.larvemax = 3  # max that can produce normally (via larvatimer)
+        # max that can exist (with the help of a queen)
+        self.larvainjectmax = 19
+        # this is how long it takes to make a larvae, when below larvamax.
+        self.larvatimer = 11
+        # this is the current time before making another larva.
+        self.currentLarvaTimer = self.larvatimer
+        # this is 4 in HotS and WoL, but I don't care. This is how much a queen adds when injecting.
+        self.injectAmt = 3
+        self.has_queen = False
+        self.queen_energy = 25
+        self.queen_energy_max = 200
+        self.queen_inject_energy_cost = 25
+        self.isInjected = 0  # 0 or 1.
+        # this is how long it takes for an inject to procuce injectAmt of larva here.
+        self.injectTime = 40
+        # this is how long is remaining to produce injectAmt of larva, but only if isInjected is active (1)
+        self.injectTimeRemaining = 0
+        self.isHatchery = True
+        self.isLair = False
+        self.isHive = False
+    # TERRAN
+        self.isOrbital = False
+        self.isTurningIntoOrbital = 0
+        self.orbitalConstructionTime = CONFIG["orbitalcommand"]["time"]
+        self.orbitalConstructionTimeRemaining = self.orbitalConstructionTime
+
+    # PROTOSS
+        # cost for chrono boost
+        self.chronoboost_cost = CONFIG["chronoboost"]["energycost"]
+        self.is_chronoboosted = False  # is this structure chrono boosted?
 
         # only for zerg as they do not use normal buildings to produce units.
         self.currentArmyProduction = []
@@ -107,7 +105,7 @@ class Base():
         # Player will ask Base for any positive changes in supply each tick.
         self.supply_to_add = 0
         # Player will ask Base for any newly completed units/buildings/tech each tick to add to ITS current_units list. Player does not care about workers.
-        self.units_to_add = []
+        self.completed_units = []
 
         self.iscurrentlyResearching = False  # true/false
         self.current_research = None  # current research represented by Unit class
@@ -124,6 +122,39 @@ class Base():
             # PROTOSS
 
             # OTHER
+
+            # supply building does not benefit from chronoboost in any race
+            for supply in self.currentSupplyProduction:
+                if supply.build_time_remaining > 0:
+                    supply.tick()
+                elif self.raceType == Race.ZERG:
+                    self.completed_units.append(supply)
+                    self.supply_to_add += CONFIG["overlord"]["providedsupply"]
+                elif self.raceType == Race.TERRAN:
+                    self.completed_units.append(supply)
+                    self.supply_to_add += CONFIG["supplydepot"]["providedsupply"]
+                elif self.raceType == Race.PROTOSS:
+                    self.completed_units.append(supply)
+                    self.supply_to_add += CONFIG["pylon"]["providedsupply"]                    
+
+            if self.currentWorkerProduction != []:
+                if self.is_chronoboosted and not self.raceType == Race.ZERG:
+                    for units in self.currentWorkerProduction:  # handles instances where multiple units can be produced, really only including buildings with reactors
+                        if units.build_time_remaining > 0:
+                            units.chronoboost_tick()
+                        else:
+                            units.is_constructed = True
+                            self.completed_units.append(units)
+                            self.currentWorkerProduction = []
+                else:
+                    for units in self.currentWorkerProduction:  # handles instances where multiple units can be produced, really only including buildings with reactors
+                        if units.build_time_remaining > 0:
+                            units.tick()
+                        else:
+                            units.is_constructed = True
+                            self.completed_units.append(units)
+                            self.currentWorkerProduction = []
+
             if(self.raceType == Race.PROTOSS or (self.raceType == Race.TERRAN and self.isOrbital)):
                 if(self.energy < self.maxenergy):
                     self.energy += self.energyRegenRate
@@ -255,8 +286,11 @@ class Base():
 
     def buildGeyser(self):
         # to try and stop from building more geysers than are available
-        if(self.raceType == Race.ZERG and self.builtGeysers < self.amtGeysers and len(self.workersBeingSentToBuildGas) < self.amtGeysers and not self.geysersUnderConstruction[self.builtGeysers]):
-            self.geysersUnderConstruction[self.builtGeysers] = True
+        if(self.raceType == Race.ZERG and self.builtGeysers < self.amtGeysers and len(self.workersBeingSentToBuildGas) < self.amtGeysers and (False in self.geysersUnderConstruction)):
+            for g in self.geysersUnderConstruction:
+                if g == False:
+                    g = True
+                    return True
         return False
 
     # initiates the command to build a geyser. once travel time finishes, the geyser actually starts being constructed.

@@ -47,7 +47,7 @@ def run_simulation(output, gamestate, target):
 
                 # regardless of logging level, we recurse normally.
                 gamestate_copy.remaining_ticks -= 1
-                gamestate_copy.player.tickUp()
+                gamestate_copy.tick()
                 run_simulation(output, gamestate_copy, None)
             else:  # if the action fails
                 if LOG.level == logging.DEBUG:
@@ -57,7 +57,7 @@ def run_simulation(output, gamestate, target):
                     gamestate_copy.player.build_order.append(
                         {"target": action.__name__, "gamestate": gamestate_copy.debug_bases()})
                 gamestate_copy.remaining_ticks -= 1
-                gamestate_copy.player.tickUp()
+                gamestate_copy.tick()
                 run_simulation(output, gamestate_copy, action)
 
     else:
@@ -73,7 +73,7 @@ def run_simulation(output, gamestate, target):
                 gamestate_copy.player.build_order.append(
                     {"completed_action": action_name, "gamestate": gamestate_copy.debug_bases()})
             gamestate_copy.remaining_ticks -= 1
-            gamestate_copy.player.tickUp()
+            gamestate_copy.tick()
             # because the action worked this time, we set it back to None.
             run_simulation(output, gamestate_copy, None)
         else:  # if the target fails, keep it set as the target and recurse until it is possible.
@@ -84,7 +84,7 @@ def run_simulation(output, gamestate, target):
                 gamestate_copy.player.build_order.append(
                     {"target": action_name, "gamestate": gamestate_copy.debug_bases()})
             gamestate_copy.remaining_ticks -= 1
-            gamestate_copy.player.tickUp()
+            gamestate_copy.tick()
             run_simulation(output, gamestate_copy, target)
 
 

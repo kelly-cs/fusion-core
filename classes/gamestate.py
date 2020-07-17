@@ -64,10 +64,7 @@ class GameState:
         self.possible_actions = [self.player.make_worker,
                                  self.player.build_supply,
                                  self.player.build_unit,
-                                 self.player.build_geyser,
-                                 self.player.transfer_to_gas,
-                                 self.player.transfer_to_minerals,
-                                 self.player.transfer_to_base]
+                                 self.player.build_geyser]
 
         if player.race == Race.PROTOSS:
             self.possible_actions.append(self.player.chronoboost)
@@ -76,6 +73,18 @@ class GameState:
     #  SECTION: Helpers Static                                       #
     # ============================================================== #
     # returns a dictionary containing all current gamestate data
+
+
+    def tick(self):
+        self.player.tickUp()
+        if not self.player.transfer_to_base in self.possible_actions and len(self.player.bases) > 1:
+            self.possible_actions.append(self.player.transfer_to_base)
+        if not self.player.transfer_to_gas in self.possible_actions:
+            for bases in self.player.bases:
+                if bases.builtGeysers > 0:
+                    self.possible_actions.append(self.player.transfer_to_gas)
+                    self.possible_actions.append(self.player.transfer_to_minerals)
+        return True
 
     def debug_gamestate(self):
         return {

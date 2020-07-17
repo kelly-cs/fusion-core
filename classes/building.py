@@ -47,7 +47,7 @@ class Building():
                 if self.is_chronoboosted:
                     for units in self.current_production:  # handles instances where multiple units can be produced, really only including buildings with reactors
                         if units.build_time_remaining > 0:
-                            units.chronboost_tick()
+                            units.chronoboost_tick()
                         else:
                             units.is_constructed = True
                             self.completed_units.append(units)
@@ -85,3 +85,7 @@ class Building():
                     return True
         return False
 
+    # we don't handle whether or not it is OK to morph this building here.
+    # instead, we only handle if it is OK to morph (i.e., if there is free production to do so)
+    def morph(self, new_building):
+        return False

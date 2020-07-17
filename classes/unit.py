@@ -33,3 +33,8 @@ class Unit:
             self.build_time_remaining -= self.chronoboost_speed
         else:
             self.is_constructed = True
+
+    # we don't handle whether or not it is OK to morph this building here.
+    # instead, we only handle if it is OK to morph (i.e., if there is free production to do so, if unit is built yet, etc)
+    def morph(self, new_building):
+        return False

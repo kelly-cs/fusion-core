@@ -40,13 +40,17 @@ def test_base_abilities(base):
         assert base.injectTimeRemaining == base.injectTime
         # ticking up should decrement injectTimeRemaining by 1
         base.tickUp(1)
-        assert base.currentlarva == 3 # starting larvae should STILL be 3 
+        assert base.currentlarva == 3 # starting larvae should STILL be 3 - the inject hasn't finished yet.
         assert base.injectTimeRemaining == base.injectTime - 1
         # finishing inject time remaining should increase larvae count and end the timer
         base.tickUp(base.injectTimeRemaining + 1)
         assert base.injectTimeRemaining == 0
         assert base.currentlarva == 3 + base.injectAmt # put this in settings later
-    
+    elif base.raceType == Race.TERRAN:
+        pass:
+    elif base.raceType == Race.PROTOSS:
+        pass:
+        
 if __name__ == '__main__':
     # test this file only
     pytest.main([__file__])

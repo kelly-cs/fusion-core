@@ -56,8 +56,15 @@ class Player:
             self.gas += base.getIncomeThisTick()[1]
             self.supply += base.supply_to_add
             base.supply_to_add = 0
-            for units in base.units_to_add:
+            for units in base.completed_units:
                 self.current_units.append(units)
+                base.completed_units.remove(units) # remove after added
+
+            for buildings in self.buildings:
+                for units in buildings.completed_units:
+                    self.current_units.append(units)
+                    buildings.completed_units.remove(units) # remove after added
+
         #LOG.debug("ticking up player")
         return income_this_tick  # as a list [ mins, gas ]
 
@@ -88,7 +95,7 @@ class Player:
             if self.race == Race.ZERG:
                 if base.builtGeysers < base.amtGeysers and self.minerals >= 25 and base.workersOnMinerals >= 1:
                     if base.buildGeyser():
-                        self.minerals -= 25
+                        self.minerals -= CONFIG["extractor"]["mincost"]
                         self.supply += 1
                         LOG.debug("building zerg extractor")
                         return True
@@ -96,19 +103,34 @@ class Player:
             else:
                 if base.builtGeysers < base.amtGeysers and self.minerals >= 75:
                     if base.buildGeyser():
-                        self.minerals -= 75
+                        self.minerals -= CONFIG["assimilator"]["mincost"]
                         LOG.debug("building terran/protoss geyser")
                         return True
                 return False
         return False
 
     # build the first unit in the queue for now
+    # add logic to consider addon swapping
     def build_unit(self):
-        if len(self.goal_units) > 0:
-            if self.goal_units[0] in CONFIG:
+        if len(self.goal_units) > 0: # if there is still stuff to build
+            thing_to_build = self.goal_units[0]
+            if not CONFIG[thing_to_build]["isbuilding"] in CONFIG and not CONFIG[thing_to_build]["isbuilding"]: # if the next target is a UNIT
+                for buildings in self.buildings: # find an appropriate building to build it from
+                    if buildings.building_name == CONFIG[thing_to_build]["builtfrom"]: # if we have at least 1 building made that this unit is built from
+                        if buildings.build(thing_to_build):
+                            return True
+                for units in self.current_units: # if we didn't find a building to build the unit from, find a unit to morph from instead.
+                    if units.name == CONFIG[thing_to_build]["builtfrom"]: # if we have a unit made that morphs into a goal unit
+                        if units.morph(CONFIG[thing_to_build]): # try morphing the unit
+                            return True
+            elif CONFIG[thing_to_build]["isbuilding"] in CONFIG and CONFIG[thing_to_build]["isbuilding"]: # if it is a building
+                if CONFIG[thing_to_build]["builtfrom"] == "worker":
+                    self.bases[0].send_worker_to_make_building(thing_to_build)
+                # consider what it can morph into
                 for buildings in self.buildings:
-                    if buildings.building_name == CONFIG[self.goal_units[0]]["builtfrom"] and buildings.build[self.goal_units[0]]:
-                        return True
+                    if buildings.building_name == CONFIG[thing_to_build]["builtfrom"]:
+                        if buildings.morph(CONFIG[thing_to_build]): # morph the building into another building.
+                            return True
         return False
 
     def transfer_to_gas(self):
