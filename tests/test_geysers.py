@@ -36,6 +36,7 @@ def base(request):
 def test_geyser_building(base):
     if base.raceType == Race.ZERG:
         if base.amtGeysers > 0:
+            assert base.builtGeysers == 0 # not built yet
             assert base.geysersUnderConstruction[0] == False
             assert base.buildGeyser() # assert that building a geyser works.
             assert base.geysersRemainingTime[0] == CONFIG["extractor"]["time"] 
@@ -43,6 +44,12 @@ def test_geyser_building(base):
             base.tickUp(1)
             assert base.geysersUnderConstruction[0] == True
             assert base.geysersRemainingTime[0] == CONFIG["extractor"]["time"] - 1
+            assert base.transferMinsToGas() == False # extractor is not done yet.
+            assert base.transferGasToMins() == False # can't send gas to mins if it doesn't exist
+            base.tickUp(CONFIG["extractor"]["time"] - 1)
+            assert base.geysersRemainingTime[0] == 0
+            assert base.geysersUnderConstruction[0] == False
+            assert base.builtGeysers == 1
 
 if __name__ == '__main__':
     # test this file only

@@ -233,7 +233,7 @@ class Base():
 
     # This function will move 1 worker from minerals to Gas, putting them into the wait queue to move in.
     def transferMinsToGas(self):
-        if(self.workersOnMinerals > 0):
+        if(self.workersOnMinerals > 0 and self.builtGeysers > 0):
             self.workersOnMinerals -= 1
             self.workersBeingTransferredFromMinsToGas.append(
                 self.timeToTransferMinsToGas)
@@ -242,22 +242,21 @@ class Base():
 
     # This function will move 1 worker from Gas to minerals
     def transferGasToMins(self):
-        for g in self.geysers:
-            # always take from which geyser has 3 workers on it first - it affects gas income least.
-            if g > 2:
-                g -= 1
+        # always take from which geyser has 3 workers on it first - it affects gas income least.
+        for g in range(self.builtGeysers,self.amtGeysers):
+            if self.geysers[g] > 2:
+                self.geysers[g] -= 1
                 self.workersBeingTransferredFromGasToMins.append(
                     self.timeToTransferMinsToGas)
                 return True
-            elif g > 0:
-                g -= 1
+            elif self.geysers[g] > 0:
+                self.geysers[g] -= 1
                 self.workersBeingTransferredFromGasToMins.append(
                     self.timeToTransferMinsToGas)
                 return True
         return False
 
     # this will immediately remove a worker from this base, from the mineral line by default.
-
     def transferWorkerOutOfBase(self, newbase):
         if(self.workersOnMinerals > 0):
             self.workersOnMinerals -= 1
