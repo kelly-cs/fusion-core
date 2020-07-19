@@ -112,26 +112,37 @@ class Player:
     # build the first unit in the queue for now
     # add logic to consider addon swapping
     def build_unit(self):
+        success = False # by doing this flag, we allow multiple things to be built in one go.
         if len(self.goal_units) > 0: # if there is still stuff to build
             thing_to_build = self.goal_units[0]
+            mineral_cost = CONFIG[thing_to_build]["mincost"]
+            gas_cost = CONFIG[thing_to_build]["gascost"]
+            supply_cost = CONFIG[thing_to_build]["supply"]
+            built_from = CONFIG[thing_to_build]["builtfrom"]
+
             if not CONFIG[thing_to_build]["isbuilding"] in CONFIG and not CONFIG[thing_to_build]["isbuilding"]: # if the next target is a UNIT
                 for buildings in self.buildings: # find an appropriate building to build it from
-                    if buildings.building_name == CONFIG[thing_to_build]["builtfrom"]: # if we have at least 1 building made that this unit is built from
-                        if buildings.build(thing_to_build):
-                            return True
+                    if buildings.building_name == built_from: # if we have at least 1 building made that this unit is built from
+                        if self.minerals > mineral_cost and self.gas > gas_cost and self.supply > supply_cost: # if we have the resources
+                            if buildings.build(thing_to_build): # if the building has free capacity, build the unit
+                                success = True
                 for units in self.current_units: # if we didn't find a building to build the unit from, find a unit to morph from instead.
-                    if units.name == CONFIG[thing_to_build]["builtfrom"]: # if we have a unit made that morphs into a goal unit
-                        if units.morph(CONFIG[thing_to_build]): # try morphing the unit
-                            return True
+                    if units.name == built_from: # if we have a unit made that morphs into a goal unit
+                        if self.minerals > mineral_cost and self.gas > gas_cost and self.supply > supply_cost: # if we have the resources
+                            if units.morph(thing_to_build): # try morphing the unit
+                                success = True
             elif CONFIG[thing_to_build]["isbuilding"] in CONFIG and CONFIG[thing_to_build]["isbuilding"]: # if it is a building
-                if CONFIG[thing_to_build]["builtfrom"] == "worker":
-                    self.bases[0].send_worker_to_make_building(thing_to_build)
+                if built_from == "worker":
+                    if self.minerals > mineral_cost and self.gas > gas_cost and self.supply > supply_cost: # if we have the resources
+                        if(self.bases[0].send_worker_to_make_building(thing_to_build)):
+                            success = True
                 # consider what it can morph into
                 for buildings in self.buildings:
-                    if buildings.building_name == CONFIG[thing_to_build]["builtfrom"]:
-                        if buildings.morph(CONFIG[thing_to_build]): # morph the building into another building.
+                    if buildings.building_name == built_from:
+                        if buildings.morph(thing_to_build): # morph the building into another building.
                             return True
-        return False
+                # add addon logic here later
+        return success
 
     def transfer_to_gas(self):
         for base in self.bases:
@@ -155,12 +166,21 @@ class Player:
         return False
 
     def build_supply(self):
-        if self.race == Race.ZERG and self.minerals >= 100:
+        if self.race == Race.ZERG and self.minerals >= CONFIG["overlord"]["mincost"]:
             for base in self.bases:
-                if base.hasFreeProduction():
-                    base.useLarva()
-                    LOG.debug("building zerg supply")
+                if base.build_supply():
+                    self.minerals -= CONFIG["overlord"]["mincost"]
                     return True
+        elif self.race == Race.TERRAN and self.minerals >= CONFIG["supplydepot"]["mincost"]:
+            for base in self.bases:
+                if base.build_supply():
+                    self.minerals -= CONFIG["supplydepot"]["mincost"]
+                    return True
+        elif self.race == Race.PROTOSS and self.minerals >= CONFIG["pylon"]["mincost"]:
+            for base in self.bases:
+                if base.build_supply():
+                    self.minerals -= CONFIG["pylon"]["mincost"]
+                    
         LOG.debug("building supply failed")
         return False
 

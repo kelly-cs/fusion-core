@@ -47,9 +47,9 @@ def test_base_abilities(base):
         assert base.injectTimeRemaining == 0
         assert base.currentlarva == 3 + base.injectAmt # put this in settings later
     elif base.raceType == Race.TERRAN:
-        pass:
+        pass
     elif base.raceType == Race.PROTOSS:
-        pass:
+        pass
         
 if __name__ == '__main__':
     # test this file only

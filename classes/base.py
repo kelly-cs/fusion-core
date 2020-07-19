@@ -54,6 +54,7 @@ class Base():
         self.workersBeingSentToBuildGas = []
         # generally how long it takes for a worker to move to and from building something (one way)
         self.workerTravelTimeToBuild = CONFIG["timeForWorkersToBuild"]["time"]
+        self.workersBeingSentToBuild = []
 
         # ZERG
 
@@ -284,13 +285,23 @@ class Base():
         else:
             return False
 
+    def build_supply(self):
+        if self.raceType == Race.ZERG and self.currentlarva > 0:
+            self.currentSupplyProduction.append(Unit("overlord"))
+            return True
+        elif self.raceType == Race.TERRAN and self.workersOnMinerals > 0:
+            if(self.send_worker_to_make_building("supplydepot")):
+                return True
+        elif self.raceType == Race.PROTOSS and self.workersOnMinerals > 0:
+            if(self.send_worker_to_make_building("pylon")):
+                return True
+        return False
+
     def buildGeyser(self):
-        # to try and stop from building more geysers than are available
-        if(self.raceType == Race.ZERG and self.builtGeysers < self.amtGeysers and len(self.workersBeingSentToBuildGas) < self.amtGeysers and (False in self.geysersUnderConstruction)):
-            for g in self.geysersUnderConstruction:
-                if g == False:
-                    g = True
-                    return True
+        for g in range(self.builtGeysers,self.amtGeysers):
+            if self.geysersUnderConstruction[g] == False:
+                self.geysersUnderConstruction[g] = True
+                return True
         return False
 
     # initiates the command to build a geyser. once travel time finishes, the geyser actually starts being constructed.
@@ -349,6 +360,19 @@ class Base():
             return True
         else:
             return False
+
+
+    def send_worker_to_make_building(self, thing_to_build):
+        if(self.workersOnMinerals > 0):
+            self.workersOnMinerals -= 1
+            worker_to_send = Unit("worker")
+            worker_to_send.is_constructed = True
+            worker_to_send.current_production = thing_to_build
+            worker_to_send.current_production.build_time_remaining += self.workerTravelTimeToBuild * 2 # this factors in the to-and-from in building time.
+            self.workersBeingSentToBuild.append(worker_to_send)
+            return True
+        return False
+
     # this will take all timers in this object and subtract them by 1 per tick.
     # It also will remove objects from the production queue if they are finished, and apply them to the base.
 
@@ -391,7 +415,7 @@ class Base():
                 self.workersBeingSentToBuildGas.append(
                     self.workerTravelTimeToBuild)  # about 5 seconds before you get to building
             else:
-                workers.tick()
+                workers -= 1
                 index += 1
 
         index = 0
@@ -400,7 +424,7 @@ class Base():
                 self.workersBeingSentToBuildGas.pop(index)
                 self.buildGeyser()
             else:
-                workers.tick()
+                workers -= 1
                 index += 1
 
         index = 0
@@ -418,7 +442,7 @@ class Base():
                 self.workersBeingTransferredToThisBase.pop(index)
                 self.workersOnMinerals += 1
             else:
-                workers.tick()
+                workers -= 1
                 index += 1
 
         index = 0
@@ -428,7 +452,7 @@ class Base():
                 self.workersBeingSentToBuildGas.append(
                     self.workerTravelTimeToBuild)  # about 5 seconds before you get to building
             else:
-                workers.tick()
+                workers -= 1
                 index += 1
 
         index = 0
@@ -440,6 +464,24 @@ class Base():
             else:
                 workers.tick()
                 index += 1
+
+        for workers in self.workersBeingSentToBuild:
+
+            # if the amt of travel time has been factored in
+            if(self.raceType == Race.ZERG and workers.current_production.build_time_remaining == (workers.current_production.build_time_remaining - self.workerTravelTimeToBuild)):
+                self.supply_to_add += 1 # do this only once
+            elif(self.raceType == Race.PROTOSS and workers.current_production.build_time_remaining == (workers.current_production.build_time_remaining - self.workerTravelTimeToBuild)):
+                self.workersBeingTransferredToThisBase.append(self.workerTravelTimeToBuild) # do this only once - probes go straight back to min line while building constructs.
+
+            if workers.current_production.build_time_remaining > 0:
+                workers.current_production.build_time_remaining -= 1
+            else:
+                self.completed_units.append(workers.current_production) # add the completed unit to list of completed units
+                if CONFIG[workers.current_production]["providedsupply"] > 0: # if the building provides supply, let's add it.
+                    self.supply_to_add += CONFIG[workers.current_production]["providedsupply"]
+                self.workersBeingSentToBuild.remove(workers)
+                if self.raceType == Race.TERRAN:
+                    self.workersBeingTransferredToThisBase.append(self.workerTravelTimeToBuild) # send back to mining only after construction is done
 
     def debug(self):
         return None

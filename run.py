@@ -99,7 +99,7 @@ if __name__ == "__main__":
         "zergling"
     ]
 
-    max_ticks = 5
+    max_ticks = 16
     output = []
     player = Player(Race.ZERG,
                     minerals=50,

@@ -17,16 +17,25 @@ class Unit:
         self.time_to_construct = CONFIG[unitname]["time"]
         self.build_time_remaining = self.time_to_construct
         self.supply = CONFIG[unitname]["supply"]
-        # for units that produce other units.. pretty much only the carrier? We'll need some special logic for this
+        # for units that produce other units/buildings, like workers! and carriers?
         self.current_production = []
         self.is_constructed = False
         self.chronoboost_speed = CONFIG["chronoboost"]["speedboost"]
+        self.completed_units = []
+        self.worker_travel_time = 3 # only used for workers
 
     def tick(self):
         if(self.build_time_remaining > 0):
             self.build_time_remaining -= 1
         else:
             self.is_constructed = True
+        
+        if(self.is_constructed and self.current_production != []):
+            if current_production[0].build_time_remaining > 0:
+                current_production.build_time_remaining -= 1
+            else:
+                self.completed_units.append(current_production[0])
+
 
     def chronoboost_tick(self):
         if(self.build_time_remaining > 0):
