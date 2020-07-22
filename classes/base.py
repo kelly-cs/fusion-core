@@ -25,7 +25,7 @@ class Base():
         self.geysersUnderConstruction = [False] * self.amtGeysers
         # time to build gas  = 21, can probably put into config
         self.geysersRemainingTime = [
-            CONFIG["extractor"]["time"]] * self.amtGeysers
+            (CONFIG["extractor"]["time"] + CONFIG["timeToTransferWorkersFromMinsToGas"]["time"])] * self.amtGeysers
         # true or false, important for initial base vs expansions
         self.isUnderConstruction = underconstruction
         # amt of time to build a base
