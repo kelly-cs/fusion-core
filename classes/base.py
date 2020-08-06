@@ -25,7 +25,7 @@ class Base():
         self.geysersUnderConstruction = [False] * self.amtGeysers
         # time to build gas  = 21, can probably put into config
         self.geysersRemainingTime = [
-            (CONFIG["extractor"]["time"] + CONFIG["timeToTransferWorkersFromMinsToGas"]["time"])] * self.amtGeysers
+            CONFIG["extractor"]["time"]] * self.amtGeysers
         # true or false, important for initial base vs expansions
         self.isUnderConstruction = underconstruction
         # amt of time to build a base
@@ -407,65 +407,49 @@ class Base():
         if(self.isGeyserCompleted()):
             self.geyserComplete()
 
-        index = 0
-        for workers in self.workersBeingTransferredFromGasToMins:
-            if(workers <= 0):  # if the timer is over
-                self.workersBeingTransferredFromGasToMins.pop(index)
-                self.workersBeingSentToBuildGas.append(
-                    self.workerTravelTimeToBuild)  # about 5 seconds before you get to building
-            else:
-                workers -= 1
-                index += 1
-
-        index = 0
-        for workers in self.workersBeingSentToBuildGas:
-            if(workers <= 0):  # if the timer is over
-                self.workersBeingSentToBuildGas.pop(index)
-                self.buildGeyser()
-            else:
-                workers -= 1
-                index += 1
-
-        index = 0
-        for workers in self.workersBeingTransferredFromMinsToGas:
-            if(workers <= 0):
-                self.workersBeingTransferredFromMinsToGas.pop(index)
-                self.addWorkerToCompletedGeyser()
-            else:
-                workers.tick()
-                index += 1
-
-        index = 0
-        for workers in self.workersBeingTransferredToThisBase:
-            if(workers <= 0):
-                self.workersBeingTransferredToThisBase.pop(index)
+        for g in range(0, len(self.workersBeingTransferredFromGasToMins)):
+            if(self.workersBeingTransferredFromGasToMins[g] <= 0):  # if the timer is over
+                self.workersBeingTransferredFromGasToMins.pop(g)
                 self.workersOnMinerals += 1
+                break
             else:
-                workers -= 1
-                index += 1
+                self.workersBeingTransferredFromGasToMins[g] -= 1
 
-        index = 0
-        for workers in self.workersBeingSentToBuildGas:
-            if(workers <= 0):  # if the timer is over
-                self.currentWorkerProduction.pop(index)
-                self.workersBeingSentToBuildGas.append(
-                    self.workerTravelTimeToBuild)  # about 5 seconds before you get to building
+        for g in range(0, len(self.workersBeingSentToBuildGas) ):
+            if(self.workersBeingSentToBuildGas[g] <= 0):  # if the timer is over
+                self.workersBeingSentToBuildGas.pop(g)
+                self.buildGeyser()
+                break
             else:
-                workers -= 1
-                index += 1
+                self.workersBeingSentToBuildGas[g] -= 1
 
-        index = 0
-        for workers in self.currentWorkerProduction:
-            if(workers.build_time_remaining <= 0):  # if the timer is over
-                self.currentWorkerProduction.pop(index)
+        for g in range(0, len(self.workersBeingTransferredFromMinsToGas) ):
+            if(self.workersBeingTransferredFromMinsToGas[g] <= 0):
+                self.workersBeingTransferredFromMinsToGas.pop(g)
+                self.addWorkerToCompletedGeyser()
+                break
+            else:
+                self.workersBeingTransferredFromMinsToGas[g].tick()
+
+        for g in range(0, len(self.workersBeingTransferredToThisBase) ):
+            if(self.workersBeingTransferredToThisBase[g] <= 0):
+                self.workersBeingTransferredToThisBase.pop(g)
+                self.workersOnMinerals += 1
+                break
+            else:
+                self.workersBeingTransferredToThisBase[g] -= 1
+
+
+        for g in range(0, len(self.currentWorkerProduction) ):
+            if(self.currentWorkerProduction[g].build_time_remaining <= 0):  # if the timer is over
+                self.currentWorkerProduction.pop(g)
                 self.workersBeingTransferredToThisBase.append(
                     self.timeToTransferMinsToGas)  # about 5 seconds before you factor in income
+                break
             else:
-                workers.tick()
-                index += 1
+                self.currentWorkerProduction[g].tick()
 
         for workers in self.workersBeingSentToBuild:
-
             # if the amt of travel time has been factored in
             if(self.raceType == Race.ZERG and workers.current_production.build_time_remaining == (workers.current_production.build_time_remaining - self.workerTravelTimeToBuild)):
                 self.supply_to_add += 1 # do this only once

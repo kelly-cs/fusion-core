@@ -94,7 +94,7 @@ class Player:
         for base in self.bases:  # check all bases
             if self.race == Race.ZERG:
                 if base.builtGeysers < base.amtGeysers and self.minerals >= 25 and base.workersOnMinerals >= 1:
-                    if base.buildGeyser():
+                    if base.sendWorkerToBuildGeyser():
                         self.minerals -= CONFIG["extractor"]["mincost"]
                         self.supply += 1
                         LOG.debug("building zerg extractor")
@@ -102,7 +102,7 @@ class Player:
                 return False
             else:
                 if base.builtGeysers < base.amtGeysers and self.minerals >= 75:
-                    if base.buildGeyser():
+                    if base.sendWorkerToBuildGeyser():
                         self.minerals -= CONFIG["assimilator"]["mincost"]
                         LOG.debug("building terran/protoss geyser")
                         return True
@@ -180,7 +180,7 @@ class Player:
             for base in self.bases:
                 if base.build_supply():
                     self.minerals -= CONFIG["pylon"]["mincost"]
-                    
+
         LOG.debug("building supply failed")
         return False
 
@@ -188,7 +188,7 @@ class Player:
         output = []
         if self.race == Race.ZERG:
             for units in self.remainingTechToBuild():
-                if self.minerals >= CONFIG[units.name]["mincost"] and self.gas >= CONFIG[units.name]["gascost"] and self.supply >= CONFIG[units.name]["supply"]:
+                if self.minerals >= CONFIG[units.name]["mincost"] and self.gas >= CONFIG[units.name]["gascost"] and self.supply >= CONFIG[units.name]["supply"] and CONFIG[units.name]["requires"] in self.current_units:
                     for current in self.current_units:
                         if CONFIG[current.name]["builtfrom"] == units.name:
                             output.append(units.name)

@@ -35,18 +35,23 @@ def base(request):
 # 
 def test_geyser_building(base):
     if base.raceType == Race.ZERG:
-        if base.amtGeysers > 0:
-            assert base.builtGeysers == 0 # not built yet
-            assert base.geysersUnderConstruction[0] == False
-            assert base.buildGeyser() # assert that building a geyser works.
-            assert base.geysersRemainingTime[0] == CONFIG["extractor"]["time"] + CONFIG["timeToTransferWorkersFromMinsToGas"]["time"]
-            assert base.geysersUnderConstruction[0] == True
-            base.tickUp(1)
-            assert base.geysersUnderConstruction[0] == True
-            assert base.geysersRemainingTime[0] == CONFIG["extractor"]["time"] + CONFIG["timeToTransferWorkersFromMinsToGas"]["time"] - 1
+        if base.amtGeysers >= 2:
             assert base.transferMinsToGas() == False # extractor is not done yet.
             assert base.transferGasToMins() == False # can't send gas to mins if it doesn't exist
-            base.tickUp(CONFIG["extractor"]["time"] + CONFIG["timeToTransferWorkersFromMinsToGas"]["time"] - 1)
+            assert base.builtGeysers == 0 # not built yet
+            assert base.geysersUnderConstruction[0] == False
+            assert base.geysersUnderConstruction[1] == False
+            assert base.buildGeyser() # assert that building a geyser works.
+            assert base.geysersRemainingTime[0] == CONFIG["extractor"]["time"]
+            assert base.geysersUnderConstruction[0] == True
+            assert base.geysersUnderConstruction[1] == False
+            base.tickUp(1)
+            assert base.geysersUnderConstruction[0] == True
+            assert base.geysersUnderConstruction[1] == False
+            assert base.geysersRemainingTime[0] == CONFIG["extractor"]["time"] - 1
+            assert base.transferMinsToGas() == False # extractor is not done yet.
+            assert base.transferGasToMins() == False # can't send gas to mins if it doesn't exist
+            base.tickUp(CONFIG["extractor"]["time"] - 1)
             assert base.geysersRemainingTime[0] == 0
             assert base.geysersUnderConstruction[0] == False
             assert base.builtGeysers == 1
