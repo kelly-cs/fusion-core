@@ -96,7 +96,7 @@ class Player:
                 if base.builtGeysers < base.amtGeysers and self.minerals >= 25 and base.workersOnMinerals >= 1:
                     if base.sendWorkerToBuildGeyser():
                         self.minerals -= CONFIG["extractor"]["mincost"]
-                        self.supply += 1
+                        self.supply += 1 # this will free up supply a second or two faster than actual - this could lead to issues later with unit production.
                         LOG.debug("building zerg extractor")
                         return True
                 return False

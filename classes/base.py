@@ -50,6 +50,7 @@ class Base():
         # this is a list that will just contain timers representing workers [4, 11, 15]
         self.workersBeingTransferredFromMinsToGas = []
         self.workersBeingTransferredFromGasToMins = []
+        self.workersTimeToStartMiningMins = CONFIG["timeForWorkersToStartMiningMins"]["time"]
         # list containing timers for how long it takes to build a refinery/gas extractor. Generally about 2-3 seconds/ticks.
         self.workersBeingSentToBuildGas = []
         # generally how long it takes for a worker to move to and from building something (one way)
@@ -123,6 +124,7 @@ class Base():
             # PROTOSS
 
             # OTHER
+            #print(self.workersBeingSentToBuildGas)
 
             # supply building does not benefit from chronoboost in any race
             for supply in self.currentSupplyProduction:
@@ -162,7 +164,7 @@ class Base():
 
             self.tickNum += 1
             self.tickUp(duration - 1)
-        return True
+            return True
 
     # returns an array [minerals, gas] for all income gained this tick. Should be ran before "tick" for accurate income.
     # first 5 ticks are never offering income.
@@ -404,50 +406,57 @@ class Base():
         for g in range(0, self.amtGeysers):
             if self.geysersUnderConstruction[g]:
                 self.geysersRemainingTime[g] -= 1
+
         if(self.isGeyserCompleted()):
             self.geyserComplete()
 
         for g in range(0, len(self.workersBeingTransferredFromGasToMins)):
             if(self.workersBeingTransferredFromGasToMins[g] <= 0):  # if the timer is over
-                self.workersBeingTransferredFromGasToMins.pop(g)
+                self.workersBeingTransferredFromGasToMins[g] = 0
                 self.workersOnMinerals += 1
-                break
+                #break
             else:
                 self.workersBeingTransferredFromGasToMins[g] -= 1
+        self.remAll(self.workersBeingTransferredFromGasToMins, 0) # clean up finished transfers
 
         for g in range(0, len(self.workersBeingSentToBuildGas) ):
             if(self.workersBeingSentToBuildGas[g] <= 0):  # if the timer is over
-                self.workersBeingSentToBuildGas.pop(g)
+                self.workersBeingSentToBuildGas[g] = 0
                 self.buildGeyser()
-                break
+                #break
             else:
                 self.workersBeingSentToBuildGas[g] -= 1
+        self.remAll(self.workersBeingSentToBuildGas, 0) # clean up finished transfers
 
         for g in range(0, len(self.workersBeingTransferredFromMinsToGas) ):
             if(self.workersBeingTransferredFromMinsToGas[g] <= 0):
-                self.workersBeingTransferredFromMinsToGas.pop(g)
+                self.workersBeingTransferredFromMinsToGas[g] = 0
                 self.addWorkerToCompletedGeyser()
-                break
+                #break
             else:
                 self.workersBeingTransferredFromMinsToGas[g].tick()
+        self.remAll(self.workersBeingTransferredFromMinsToGas, 0) # clean up finished transfers
 
         for g in range(0, len(self.workersBeingTransferredToThisBase) ):
             if(self.workersBeingTransferredToThisBase[g] <= 0):
-                self.workersBeingTransferredToThisBase.pop(g)
                 self.workersOnMinerals += 1
-                break
+                self.workersBeingTransferredToThisBase[g] = 0
+                #break
             else:
                 self.workersBeingTransferredToThisBase[g] -= 1
+        self.remAll(self.workersBeingTransferredToThisBase, 0) # clean up finished transfers
+
 
 
         for g in range(0, len(self.currentWorkerProduction) ):
             if(self.currentWorkerProduction[g].build_time_remaining <= 0):  # if the timer is over
-                self.currentWorkerProduction.pop(g)
                 self.workersBeingTransferredToThisBase.append(
-                    self.timeToTransferMinsToGas)  # about 5 seconds before you factor in income
-                break
+                    self.workersTimeToStartMiningMins)  # about 5 seconds before you factor in income
+                self.currentWorkerProduction[g].build_time_remaining = 0
+                #break
             else:
                 self.currentWorkerProduction[g].tick()
+        self.remAll(self.currentWorkerProduction, 0) # clean up finished transfers
 
         for workers in self.workersBeingSentToBuild:
             # if the amt of travel time has been factored in
@@ -476,3 +485,11 @@ class Base():
             return {"worker": self.currentWorkerProduction[0].build_time_remaining}
         else:
             return {self.current_research.name: self.current_research.build_time_remaining}
+
+    # https://stackoverflow.com/questions/2186656/how-can-i-remove-all-instances-of-an-element-from-a-list-in-python
+    def remAll(self, L, item):
+        answer = []
+        for i in L:
+            if i!=item:
+                answer.append(i)
+        return answer

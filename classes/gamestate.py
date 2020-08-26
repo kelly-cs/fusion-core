@@ -93,13 +93,19 @@ class GameState:
 
     # returns a dictionary containing all player data - except build order, because we output this information to that
     def debug_player(self):
+        output_units = []
+        for units in self.player.current_units:
+            output_units.append(units.name) 
+        output_buildings = []
+        for buildings in self.player.buildings:
+            output_buildings.append(buildings.name)
         return{
             "race": str(self.player.race),
             "minerals": self.player.minerals,
             "gas": self.player.gas,
             "goal_units": self.player.goal_units,
-            "current_units": self.player.current_units,
-            "buildings": self.player.buildings,
+            "current_units": output_units,
+            "buildings": output_buildings,
             "supply": self.player.supply,
             "required_tech": self.player.required_tech,
             "allowed_transitions": self.player.allowedTransitions
